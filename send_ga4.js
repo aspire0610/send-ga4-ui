@@ -42,7 +42,7 @@ const targetUrls = [
   { name: 'fy26p12w3 Showroom 4', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Computer-Desk-Chair-Sets/c/50602?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p12_Showroom_ComputerDeskChair' }
 ];
 
-const MEASUREMENT_ID = 'G-F5DSB6YJ3';
+const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
 
 app.get('/', (req, res) => {
   let checkboxesHtml = targetUrls.map((item, index) => `
