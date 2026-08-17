@@ -92,7 +92,7 @@ app.get('/', (req, res) => {
             .log-err { color: #f87171; }
             .log-info { color: #60a5fa; }
             .log-warn { color: #fbbf24; }
-            #countdown { font-weight: bold; color: #38bdf8; width: 100%; margin-top: 5px; }
+            #status-text { font-weight: bold; color: #38bdf8; width: 100%; margin-top: 5px; font-size: 15px; }
         </style>
     </head>
     <body>
@@ -122,7 +122,7 @@ app.get('/', (req, res) => {
                     重複次數: 
                     <input type="number" id="repeat-count" value="5" min="1">
                 </label>
-                <div id="countdown"></div>
+                <div id="status-text"></div>
             </div>
 
             <div style="display: flex; gap: 10px;">
@@ -137,25 +137,33 @@ app.get('/', (req, res) => {
         <script>
             var autoTimer = null;
             var countdownTimer = null;
-            var isRunning = false;
+            var isStopped = false;
+            var isSending = false;
             var currentRunCount = 0;
             var maxRuns = 1;
+            var currentController = null;
 
             function toggleAll(status) {
                 var checkboxes = document.querySelectorAll('input[name="urlIndex"]');
-                checkboxes.forEach(function(cb) {
-                    cb.checked = status;
-                });
+                checkboxes.forEach(function(cb) { cb.checked = status; });
+            }
+
+            function updateStatus(msg, color) {
+                var el = document.getElementById('status-text');
+                el.innerText = msg;
+                if (color) el.style.color = color;
             }
 
             function handleStart() {
+                isStopped = false;
                 var isAuto = document.getElementById('auto-repeat-chk').checked;
+                
                 if (isAuto) {
                     maxRuns = parseInt(document.getElementById('repeat-count').value, 10) || 1;
                     currentRunCount = 0;
                     document.getElementById('start-btn').style.display = 'none';
                     document.getElementById('stop-btn').style.display = 'inline-block';
-                    runLoop();
+                    startNextLoop();
                 } else {
                     currentRunCount = 1;
                     maxRuns = 1;
@@ -164,28 +172,34 @@ app.get('/', (req, res) => {
             }
 
             function stopAutoLoop() {
+                isStopped = true;
                 clearTimeout(autoTimer);
                 clearInterval(countdownTimer);
-                document.getElementById('countdown').innerText = '自動重複發送已停止。';
+                
+                if (currentController) {
+                    currentController.abort(); // 中斷發送中的 HTTP 請求
+                }
+
+                updateStatus('🛑 已停止自動發送', '#f87171');
+                
                 document.getElementById('start-btn').style.display = 'inline-block';
                 document.getElementById('stop-btn').style.display = 'none';
                 document.getElementById('start-btn').disabled = false;
                 document.getElementById('start-btn').innerText = '單次發送 / 啟動自動重複';
-                isRunning = false;
             }
 
-            async function runLoop() {
-                if (isRunning) return;
+            async function startNextLoop() {
+                if (isStopped) return;
                 currentRunCount++;
                 
                 await executeTask();
                 
+                if (isStopped) return;
+
                 var isAuto = document.getElementById('auto-repeat-chk').checked;
-                
-                // 檢查是否達到設定的重複次數
                 if (!isAuto || currentRunCount >= maxRuns) {
-                    var logBox = document.getElementById('log-box');
                     if (currentRunCount >= maxRuns && isAuto) {
+                        var logBox = document.getElementById('log-box');
                         logBox.innerHTML += '<span class="log-warn">已達到設定的總重複次數 (' + maxRuns + ' 次)，自動停止任務。</span><br>';
                         logBox.scrollTop = logBox.scrollHeight;
                     }
@@ -193,36 +207,39 @@ app.get('/', (req, res) => {
                     return;
                 }
 
+                // 開始倒數計時
                 var sec = parseInt(document.getElementById('interval-sec').value, 10) || 60;
                 var remaining = sec;
                 
-                var cdSpan = document.getElementById('countdown');
-                cdSpan.innerText = '第 (' + currentRunCount + '/' + maxRuns + ') 次執行完畢，下一次發送倒數: ' + remaining + ' 秒';
+                updateStatus('⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' + remaining + ' 秒', '#38bdf8');
 
                 countdownTimer = setInterval(function() {
+                    if (isStopped) {
+                        clearInterval(countdownTimer);
+                        return;
+                    }
                     remaining--;
                     if (remaining > 0) {
-                        cdSpan.innerText = '第 (' + currentRunCount + '/' + maxRuns + ') 次執行完畢，下一次發送倒數: ' + remaining + ' 秒';
+                        updateStatus('⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' + remaining + ' 秒', '#38bdf8');
                     } else {
                         clearInterval(countdownTimer);
-                        cdSpan.innerText = '準備進行第 (' + (currentRunCount + 1) + '/' + maxRuns + ') 次發送...';
                     }
                 }, 1000);
 
                 autoTimer = setTimeout(function() {
-                    runLoop();
+                    if (!isStopped) startNextLoop();
                 }, sec * 1000);
             }
 
             async function executeTask() {
+                if (isStopped) return;
+                
                 var btn = document.getElementById('start-btn');
                 var logBox = document.getElementById('log-box');
                 
                 var checkboxes = document.querySelectorAll('input[name="urlIndex"]:checked');
                 var selectedIndexes = [];
-                checkboxes.forEach(function(cb) {
-                    selectedIndexes.push(parseInt(cb.value));
-                });
+                checkboxes.forEach(function(cb) { selectedIndexes.push(parseInt(cb.value)); });
 
                 if (selectedIndexes.length === 0) {
                     alert('請至少勾選一個連結！');
@@ -230,21 +247,27 @@ app.get('/', (req, res) => {
                     return;
                 }
 
-                isRunning = true;
+                isSending = true;
                 btn.disabled = true;
-                btn.innerText = '發送中...';
                 
-                var runTag = document.getElementById('auto-repeat-chk').checked 
-                    ? ' [第 ' + currentRunCount + '/' + maxRuns + ' 輪]' 
-                    : '';
-                    
+                var isAuto = document.getElementById('auto-repeat-chk').checked;
+                if (isAuto) {
+                    updateStatus('⏳ 第 (' + currentRunCount + '/' + maxRuns + ') 次數據發送中...', '#f59e0b');
+                } else {
+                    updateStatus('⏳ 數據發送中...', '#f59e0b');
+                }
+
+                var runTag = isAuto ? ' [第 ' + currentRunCount + '/' + maxRuns + ' 輪]' : '';
                 logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + ']' + runTag + ' 開始發送選中的 ' + selectedIndexes.length + ' 筆資料...</span><br>';
+
+                currentController = new AbortController();
 
                 try {
                     var response = await fetch('/run-task', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ indexes: selectedIndexes })
+                        body: JSON.stringify({ indexes: selectedIndexes }),
+                        signal: currentController.signal
                     });
 
                     var reader = response.body.getReader();
@@ -252,20 +275,24 @@ app.get('/', (req, res) => {
 
                     while (true) {
                         var result = await reader.read();
-                        if (result.done) break;
+                        if (result.done || isStopped) break;
                         var chunk = decoder.decode(result.value, { stream: true });
                         logBox.innerHTML += chunk;
                         logBox.scrollTop = logBox.scrollHeight;
                     }
                 } catch (err) {
-                    logBox.innerHTML += '<span class="log-err">執行發生錯誤: ' + err.message + '</span><br>';
+                    if (err.name !== 'AbortError') {
+                        logBox.innerHTML += '<span class="log-err">執行發生錯誤: ' + err.message + '</span><br>';
+                    }
                 } finally {
-                    isRunning = false;
-                    if (!document.getElementById('auto-repeat-chk').checked) {
+                    isSending = false;
+                    currentController = null;
+                    if (!isAuto && !isStopped) {
                         btn.disabled = false;
                         btn.innerText = '單次發送 / 啟動自動重複';
+                        updateStatus('✅ 發送完畢', '#34d399');
                     }
-                    logBox.innerHTML += '<span class="log-info">=== 本次任務發送完畢 ===</span><br>';
+                    logBox.innerHTML += '<span class="log-info">=== 本次任務執行完畢 ===</span><br>';
                     logBox.scrollTop = logBox.scrollHeight;
                 }
             }
@@ -302,7 +329,6 @@ app.post('/run-task', async (req, res) => {
       en: 'page_view'
     };
 
-    // 格式化參數以利 Log 展開閱讀
     var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
       '↳ <b>[發送參數]</b> ' +
       '<b>tid:</b> ' + params.tid + ' | ' +
@@ -313,14 +339,12 @@ app.post('/run-task', async (req, res) => {
       '</div>';
 
     try {
-      // 1. 發送正式數據
       var response = await axios.get(gaEndpoint, { 
         params,
         headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15' },
         timeout: 5000 
       });
 
-      // 2. 呼叫 GA4 Debug Server 驗證數據
       var debugMsg = '';
       try {
         var debugRes = await axios.get(debugEndpoint, { params, timeout: 3000 });
