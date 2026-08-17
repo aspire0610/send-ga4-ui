@@ -86,13 +86,13 @@ app.get('/', (req, res) => {
                 .grid-box { grid-template-columns: 1fr 1fr; gap: 10px; max-height: 280px; padding: 15px; }
             }
             .auto-panel { background: #0f172a; border: 1px solid #334155; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-            .auto-panel label { color: #cbd5e1; font-size: 14px; }
+            .auto-panel label { color: #cbd5e1; font-size: 14px; display: flex; align-items: center; gap: 6px; }
             .auto-panel input[type="number"] { background: #1e293b; border: 1px solid #475569; color: white; padding: 6px 10px; border-radius: 6px; width: 80px; font-size: 14px; }
-            #log-box { background: #090d16; border: 1px solid #334155; border-radius: 8px; padding: 15px; height: 250px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #34d399; }
+            #log-box { background: #090d16; border: 1px solid #334155; border-radius: 8px; padding: 15px; height: 280px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #34d399; line-height: 1.5; }
             .log-err { color: #f87171; }
             .log-info { color: #60a5fa; }
             .log-warn { color: #fbbf24; }
-            #countdown { font-weight: bold; color: #38bdf8; }
+            #countdown { font-weight: bold; color: #38bdf8; width: 100%; margin-top: 5px; }
         </style>
     </head>
     <body>
@@ -111,14 +111,18 @@ app.get('/', (req, res) => {
 
             <div class="auto-panel">
                 <label>
-                    <input type="checkbox" id="auto-repeat-chk" style="width: 16px; height: 16px; vertical-align: middle;">
+                    <input type="checkbox" id="auto-repeat-chk" style="width: 16px; height: 16px;">
                     啟用自動重複發送
                 </label>
                 <label>
-                    間隔時間 (秒): 
+                    間隔 (秒): 
                     <input type="number" id="interval-sec" value="60" min="5">
                 </label>
-                <span id="countdown"></span>
+                <label>
+                    重複次數: 
+                    <input type="number" id="repeat-count" value="5" min="1">
+                </label>
+                <div id="countdown"></div>
             </div>
 
             <div style="display: flex; gap: 10px;">
@@ -126,7 +130,7 @@ app.get('/', (req, res) => {
                 <button type="button" id="stop-btn" class="btn-stop" style="display: none;" onclick="stopAutoLoop()">停止自動發送</button>
             </div>
             
-            <h3 style="font-size: 14px; margin: 15px 0 8px 0; color: #cbd5e1;">即時執行日誌：</h3>
+            <h3 style="font-size: 14px; margin: 15px 0 8px 0; color: #cbd5e1;">即時執行日誌 (包含傳送參數)：</h3>
             <div id="log-box">等待開始執行...</div>
         </div>
 
@@ -134,6 +138,8 @@ app.get('/', (req, res) => {
             var autoTimer = null;
             var countdownTimer = null;
             var isRunning = false;
+            var currentRunCount = 0;
+            var maxRuns = 1;
 
             function toggleAll(status) {
                 var checkboxes = document.querySelectorAll('input[name="urlIndex"]');
@@ -145,10 +151,14 @@ app.get('/', (req, res) => {
             function handleStart() {
                 var isAuto = document.getElementById('auto-repeat-chk').checked;
                 if (isAuto) {
+                    maxRuns = parseInt(document.getElementById('repeat-count').value, 10) || 1;
+                    currentRunCount = 0;
                     document.getElementById('start-btn').style.display = 'none';
                     document.getElementById('stop-btn').style.display = 'inline-block';
                     runLoop();
                 } else {
+                    currentRunCount = 1;
+                    maxRuns = 1;
                     executeTask();
                 }
             }
@@ -156,7 +166,7 @@ app.get('/', (req, res) => {
             function stopAutoLoop() {
                 clearTimeout(autoTimer);
                 clearInterval(countdownTimer);
-                document.getElementById('countdown').innerText = '已停止自動重複';
+                document.getElementById('countdown').innerText = '自動重複發送已停止。';
                 document.getElementById('start-btn').style.display = 'inline-block';
                 document.getElementById('stop-btn').style.display = 'none';
                 document.getElementById('start-btn').disabled = false;
@@ -166,10 +176,19 @@ app.get('/', (req, res) => {
 
             async function runLoop() {
                 if (isRunning) return;
+                currentRunCount++;
+                
                 await executeTask();
                 
                 var isAuto = document.getElementById('auto-repeat-chk').checked;
-                if (!isAuto) {
+                
+                // 檢查是否達到設定的重複次數
+                if (!isAuto || currentRunCount >= maxRuns) {
+                    var logBox = document.getElementById('log-box');
+                    if (currentRunCount >= maxRuns && isAuto) {
+                        logBox.innerHTML += '<span class="log-warn">已達到設定的總重複次數 (' + maxRuns + ' 次)，自動停止任務。</span><br>';
+                        logBox.scrollTop = logBox.scrollHeight;
+                    }
                     stopAutoLoop();
                     return;
                 }
@@ -178,15 +197,15 @@ app.get('/', (req, res) => {
                 var remaining = sec;
                 
                 var cdSpan = document.getElementById('countdown');
-                cdSpan.innerText = '下一次發送倒數: ' + remaining + ' 秒';
+                cdSpan.innerText = '第 (' + currentRunCount + '/' + maxRuns + ') 次執行完畢，下一次發送倒數: ' + remaining + ' 秒';
 
                 countdownTimer = setInterval(function() {
                     remaining--;
                     if (remaining > 0) {
-                        cdSpan.innerText = '下一次發送倒數: ' + remaining + ' 秒';
+                        cdSpan.innerText = '第 (' + currentRunCount + '/' + maxRuns + ') 次執行完畢，下一次發送倒數: ' + remaining + ' 秒';
                     } else {
                         clearInterval(countdownTimer);
-                        cdSpan.innerText = '準備發送...';
+                        cdSpan.innerText = '準備進行第 (' + (currentRunCount + 1) + '/' + maxRuns + ') 次發送...';
                     }
                 }, 1000);
 
@@ -214,7 +233,12 @@ app.get('/', (req, res) => {
                 isRunning = true;
                 btn.disabled = true;
                 btn.innerText = '發送中...';
-                logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + '] 開始發送選中的 ' + selectedIndexes.length + ' 筆資料...</span><br>';
+                
+                var runTag = document.getElementById('auto-repeat-chk').checked 
+                    ? ' [第 ' + currentRunCount + '/' + maxRuns + ' 輪]' 
+                    : '';
+                    
+                logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + ']' + runTag + ' 開始發送選中的 ' + selectedIndexes.length + ' 筆資料...</span><br>';
 
                 try {
                     var response = await fetch('/run-task', {
@@ -241,7 +265,7 @@ app.get('/', (req, res) => {
                         btn.disabled = false;
                         btn.innerText = '單次發送 / 啟動自動重複';
                     }
-                    logBox.innerHTML += '<span class="log-info">=== 本次任務執行完畢 ===</span><br>';
+                    logBox.innerHTML += '<span class="log-info">=== 本次任務發送完畢 ===</span><br>';
                     logBox.scrollTop = logBox.scrollHeight;
                 }
             }
@@ -265,7 +289,6 @@ app.post('/run-task', async (req, res) => {
     
     var clientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
     
-    // GA4 正式 Endpoint 與 驗證 (Debug) Endpoint
     var gaEndpoint = 'https://www.google-analytics.com/g/collect';
     var debugEndpoint = 'https://www.google-analytics.com/debug/g/collect';
 
@@ -279,6 +302,16 @@ app.post('/run-task', async (req, res) => {
       en: 'page_view'
     };
 
+    // 格式化參數以利 Log 展開閱讀
+    var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
+      '↳ <b>[發送參數]</b> ' +
+      '<b>tid:</b> ' + params.tid + ' | ' +
+      '<b>cid:</b> ' + params.cid + ' | ' +
+      '<b>en:</b> ' + params.en + '<br>' +
+      '<span style="padding-left: 80px;"><b>dt:</b> ' + params.dt + '</span><br>' +
+      '<span style="padding-left: 80px;"><b>dl:</b> ' + params.dl + '</span>' +
+      '</div>';
+
     try {
       // 1. 發送正式數據
       var response = await axios.get(gaEndpoint, { 
@@ -287,7 +320,7 @@ app.post('/run-task', async (req, res) => {
         timeout: 5000 
       });
 
-      // 2. 呼叫 GA4 Debug Server 驗證數據是否符合格式規範
+      // 2. 呼叫 GA4 Debug Server 驗證數據
       var debugMsg = '';
       try {
         var debugRes = await axios.get(debugEndpoint, { params, timeout: 3000 });
@@ -301,16 +334,16 @@ app.post('/run-task', async (req, res) => {
       }
 
       if (response.status === 200 || response.status === 204) {
-        res.write('<span style="color: #34d399;">[成功] (' + (i + 1) + '/' + selectedIndexes.length + ') ' + target.name + ' 已送達</span>' + debugMsg + '<br>');
+        res.write('<span style="color: #34d399;">[成功] (' + (i + 1) + '/' + selectedIndexes.length + ') ' + target.name + ' 已送達</span>' + debugMsg + '<br>' + paramLogHtml);
       }
     } catch (error) {
-      res.write('<span style="color: #f87171;">[失敗] (' + (i + 1) + '/' + selectedIndexes.length + ') ' + target.name + ' 失敗: ' + error.message + '</span><br>');
+      res.write('<span style="color: #f87171;">[失敗] (' + (i + 1) + '/' + selectedIndexes.length + ') ' + target.name + ' 失敗: ' + error.message + '</span><br>' + paramLogHtml);
     }
 
     await new Promise(resolve => setTimeout(resolve, 300));
   }
 
-  res.write('<b>選中的網頁數據全部發送完畢！</b><br>');
+  res.write('<b>選中的網頁數據發送完畢！</b><br>');
   res.end();
 });
 
