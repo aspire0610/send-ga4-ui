@@ -46,10 +46,10 @@ const MEASUREMENT_ID = 'G-F5DSB6YJ3';
 
 app.get('/', (req, res) => {
   let checkboxesHtml = targetUrls.map((item, index) => `
-    <div style="margin-bottom: 8px;">
-      <label style="cursor: pointer; display: flex; align-items: center; gap: 8px; color: #cbd5e1;">
-        <input type="checkbox" name="urlIndex" value="${index}" checked style="width: 16px; height: 16px;">
-        <span><b>${index + 1}.</b>${item.name}</span>
+    <div style="margin-bottom: 10px;">
+      <label style="cursor: pointer; display: flex; align-items: center; gap: 12px; color: #cbd5e1; font-size: 15px; padding: 4px 0;">
+        <input type="checkbox" name="urlIndex" value="${index}" checked style="width: 20px; height: 20px; accent-color: #38bdf8;">
+        <span><b>${index + 1}.</b> ${item.name}</span>
       </label>
     </div>
   `).join('');
@@ -59,28 +59,40 @@ app.get('/', (req, res) => {
     <html lang="zh-TW">
     <head>
         <meta charset="UTF-8">
-        <title>Costco GA4 選擇性發送控制台</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Costco GA4 發送控制台</title>
         <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 20px; margin: 0; }
-            .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-            h1 { font-size: 22px; margin-bottom: 5px; color: #38bdf8; }
-            p { color: #94a3b8; margin-bottom: 15px; font-size: 14px; }
-            .actions { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
-            button { background: #0284c7; color: white; border: none; padding: 10px 20px; font-size: 15px; font-weight: bold; border-radius: 6px; cursor: pointer; transition: background 0.2s; }
+            * { box-sizing: border-box; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 10px; margin: 0; }
+            .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+            @media (min-width: 768px) {
+                body { padding: 20px; }
+                .container { padding: 25px; }
+            }
+            h1 { font-size: 20px; margin-bottom: 5px; color: #38bdf8; }
+            @media (min-width: 768px) { h1 { font-size: 22px; } }
+            p { color: #94a3b8; margin-bottom: 15px; font-size: 13px; }
+            @media (min-width: 768px) { p { font-size: 14px; } }
+            .actions { margin-bottom: 15px; display: flex; gap: 10px; }
+            button { background: #0284c7; color: white; border: none; padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; transition: background 0.2s; }
             button:hover { background: #0369a1; }
             button:disabled { background: #475569; cursor: not-allowed; }
-            .btn-secondary { background: #334155; font-size: 13px; padding: 8px 14px; }
+            .btn-secondary { background: #334155; font-size: 14px; padding: 10px 16px; width: auto; }
             .btn-secondary:hover { background: #475569; }
-            .grid-box { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; max-height: 250px; overflow-y: auto; background: #0f172a; padding: 15px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 15px; }
-            #log-box { background: #090d16; border: 1px solid #334155; border-radius: 8px; padding: 15px; height: 220px; overflow-y: auto; font-family: monospace; font-size: 13px; color: #34d399; }
+            .grid-box { display: grid; grid-template-columns: 1fr; gap: 5px; max-height: 320px; overflow-y: auto; background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 15px; }
+            @media (min-width: 768px) {
+                .grid-box { grid-template-columns: 1fr 1fr; gap: 10px; max-height: 280px; padding: 15px; }
+                button#start-btn { width: auto; }
+            }
+            #log-box { background: #090d16; border: 1px solid #334155; border-radius: 8px; padding: 15px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #34d399; }
             .log-err { color: #f87171; }
             .log-info { color: #60a5fa; }
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>📊 Costco 連結 GA4 選擇性發送控制台</h1>
-            <p>請勾選想要發送到 GA4 後台的目標連結：</p>
+            <h1>📊 GA4 選擇性發送控制台</h1>
+            <p>請勾選要發送的目標連結：</p>
             
             <div class="actions">
                 <button type="button" class="btn-secondary" onclick="toggleAll(true)">全選</button>
@@ -93,7 +105,7 @@ app.get('/', (req, res) => {
 
             <button type="button" id="start-btn" onclick="startSending()">開始發送勾選的數據</button>
             
-            <h3 style="font-size: 15px; margin: 15px 0 8px 0; color: #cbd5e1;">即時執行日誌：</h3>
+            <h3 style="font-size: 14px; margin: 15px 0 8px 0; color: #cbd5e1;">即時執行日誌：</h3>
             <div id="log-box">等待開始執行...</div>
         </div>
 
@@ -183,7 +195,7 @@ app.post('/run-task', async (req, res) => {
     try {
       var response = await axios.get(gaEndpoint, { 
         params,
-        headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+        headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15' },
         timeout: 5000 
       });
 
