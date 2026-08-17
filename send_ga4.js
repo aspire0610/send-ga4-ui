@@ -387,3 +387,8 @@ app.post('/run-task', async (req, res) => {
   res.write('<b>選中的網頁數據發送完畢！</b><br>');
   res.end();
 });
+
+app.listen(PORT, () => {
+  console.log('UI 介面已啟動！請在瀏覽器打開：http://localhost:' + PORT);
+});
+
