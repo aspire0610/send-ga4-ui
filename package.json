@@ -8,6 +8,7 @@
   "description": "",
   "main": "send_ga4.js",
   "scripts": {
+    "start": "node send_ga4.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
