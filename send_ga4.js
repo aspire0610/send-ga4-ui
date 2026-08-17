@@ -310,12 +310,25 @@ app.post('/run-task', async (req, res) => {
 
   res.write('開始處理發送任務...<br>');
 
+  // 1. 定義常態裝置的 User-Agent 清單
+  const userAgents = [
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1',
+    'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.80 Mobile Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/123.0.6312.52 Mobile/15E148 Safari/604.1'
+  ];
+
   for (var i = 0; i < selectedIndexes.length; i++) {
     var targetIndex = selectedIndexes[i];
     var target = targetUrls[targetIndex];
     
     var clientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
     
+    // 2. 隨機選取 User-Agent 與 生成停留時間 (1000ms ~ 3500ms)
+    var randomUA = userAgents[Math.floor(Math.random() * userAgents.length)];
+    var engagementTimeMs = Math.floor(Math.random() * 2500) + 1000;
+
     var gaEndpoint = 'https://www.google-analytics.com/g/collect';
     var debugEndpoint = 'https://www.google-analytics.com/debug/g/collect';
 
@@ -324,6 +337,7 @@ app.post('/run-task', async (req, res) => {
       tid: MEASUREMENT_ID,
       cid: clientId,
       _p: Math.floor(Math.random() * 100000),
+      _et: engagementTimeMs, // 加入參與時間 (毫秒)
       dl: target.url,
       dt: target.name,
       en: 'page_view'
@@ -333,21 +347,24 @@ app.post('/run-task', async (req, res) => {
       '↳ <b>[發送參數]</b> ' +
       '<b>tid:</b> ' + params.tid + ' | ' +
       '<b>cid:</b> ' + params.cid + ' | ' +
+      '<b>_et:</b> ' + params._et + ' ms | ' +
       '<b>en:</b> ' + params.en + '<br>' +
+      '<span style="padding-left: 80px;"><b>UA:</b> ' + randomUA.substring(0, 50) + '...</span><br>' +
       '<span style="padding-left: 80px;"><b>dt:</b> ' + params.dt + '</span><br>' +
       '<span style="padding-left: 80px;"><b>dl:</b> ' + params.dl + '</span>' +
       '</div>';
 
     try {
+      // 3. 將隨機選取的 User-Agent 放入 Request Header
       var response = await axios.get(gaEndpoint, { 
         params,
-        headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15' },
+        headers: { 'User-Agent': randomUA },
         timeout: 5000 
       });
 
       var debugMsg = '';
       try {
-        var debugRes = await axios.get(debugEndpoint, { params, timeout: 3000 });
+        var debugRes = await axios.get(debugEndpoint, { params, headers: { 'User-Agent': randomUA }, timeout: 3000 });
         if (debugRes.data && debugRes.data.validationMessages && debugRes.data.validationMessages.length > 0) {
           debugMsg = ' <span class="log-warn">[GA4驗證提示: ' + JSON.stringify(debugRes.data.validationMessages) + ']</span>';
         } else {
@@ -369,8 +386,4 @@ app.post('/run-task', async (req, res) => {
 
   res.write('<b>選中的網頁數據發送完畢！</b><br>');
   res.end();
-});
-
-app.listen(PORT, () => {
-  console.log('UI 介面已啟動！請在瀏覽器打開：http://localhost:' + PORT);
 });
