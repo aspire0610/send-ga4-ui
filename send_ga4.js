@@ -73,20 +73,26 @@ app.get('/', (req, res) => {
             @media (min-width: 768px) { h1 { font-size: 22px; } }
             p { color: #94a3b8; margin-bottom: 15px; font-size: 13px; }
             @media (min-width: 768px) { p { font-size: 14px; } }
-            .actions { margin-bottom: 15px; display: flex; gap: 10px; }
-            button { background: #0284c7; color: white; border: none; padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; width: 100%; transition: background 0.2s; }
+            .actions { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+            button { background: #0284c7; color: white; border: none; padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
             button:hover { background: #0369a1; }
             button:disabled { background: #475569; cursor: not-allowed; }
             .btn-secondary { background: #334155; font-size: 14px; padding: 10px 16px; width: auto; }
             .btn-secondary:hover { background: #475569; }
+            .btn-stop { background: #dc2626; }
+            .btn-stop:hover { background: #b91c1c; }
             .grid-box { display: grid; grid-template-columns: 1fr; gap: 5px; max-height: 320px; overflow-y: auto; background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 15px; }
             @media (min-width: 768px) {
                 .grid-box { grid-template-columns: 1fr 1fr; gap: 10px; max-height: 280px; padding: 15px; }
-                button#start-btn { width: auto; }
             }
-            #log-box { background: #090d16; border: 1px solid #334155; border-radius: 8px; padding: 15px; height: 200px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #34d399; }
+            .auto-panel { background: #0f172a; border: 1px solid #334155; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+            .auto-panel label { color: #cbd5e1; font-size: 14px; }
+            .auto-panel input[type="number"] { background: #1e293b; border: 1px solid #475569; color: white; padding: 6px 10px; border-radius: 6px; width: 80px; font-size: 14px; }
+            #log-box { background: #090d16; border: 1px solid #334155; border-radius: 8px; padding: 15px; height: 250px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #34d399; }
             .log-err { color: #f87171; }
             .log-info { color: #60a5fa; }
+            .log-warn { color: #fbbf24; }
+            #countdown { font-weight: bold; color: #38bdf8; }
         </style>
     </head>
     <body>
@@ -103,13 +109,32 @@ app.get('/', (req, res) => {
                 ${checkboxesHtml}
             </div>
 
-            <button type="button" id="start-btn" onclick="startSending()">開始發送勾選的數據</button>
+            <div class="auto-panel">
+                <label>
+                    <input type="checkbox" id="auto-repeat-chk" style="width: 16px; height: 16px; vertical-align: middle;">
+                    啟用自動重複發送
+                </label>
+                <label>
+                    間隔時間 (秒): 
+                    <input type="number" id="interval-sec" value="60" min="5">
+                </label>
+                <span id="countdown"></span>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" id="start-btn" onclick="handleStart()">單次發送 / 啟動自動重複</button>
+                <button type="button" id="stop-btn" class="btn-stop" style="display: none;" onclick="stopAutoLoop()">停止自動發送</button>
+            </div>
             
             <h3 style="font-size: 14px; margin: 15px 0 8px 0; color: #cbd5e1;">即時執行日誌：</h3>
             <div id="log-box">等待開始執行...</div>
         </div>
 
         <script>
+            var autoTimer = null;
+            var countdownTimer = null;
+            var isRunning = false;
+
             function toggleAll(status) {
                 var checkboxes = document.querySelectorAll('input[name="urlIndex"]');
                 checkboxes.forEach(function(cb) {
@@ -117,7 +142,60 @@ app.get('/', (req, res) => {
                 });
             }
 
-            async function startSending() {
+            function handleStart() {
+                var isAuto = document.getElementById('auto-repeat-chk').checked;
+                if (isAuto) {
+                    document.getElementById('start-btn').style.display = 'none';
+                    document.getElementById('stop-btn').style.display = 'inline-block';
+                    runLoop();
+                } else {
+                    executeTask();
+                }
+            }
+
+            function stopAutoLoop() {
+                clearTimeout(autoTimer);
+                clearInterval(countdownTimer);
+                document.getElementById('countdown').innerText = '已停止自動重複';
+                document.getElementById('start-btn').style.display = 'inline-block';
+                document.getElementById('stop-btn').style.display = 'none';
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('start-btn').innerText = '單次發送 / 啟動自動重複';
+                isRunning = false;
+            }
+
+            async function runLoop() {
+                if (isRunning) return;
+                await executeTask();
+                
+                var isAuto = document.getElementById('auto-repeat-chk').checked;
+                if (!isAuto) {
+                    stopAutoLoop();
+                    return;
+                }
+
+                var sec = parseInt(document.getElementById('interval-sec').value, 10) || 60;
+                var remaining = sec;
+                
+                var cdSpan = document.getElementById('countdown');
+                cdSpan.innerText = '下一次發送倒數: ' + remaining + ' 秒';
+
+                countdownTimer = setInterval(function() {
+                    remaining--;
+                    if (remaining > 0) {
+                        cdSpan.innerText = '下一次發送倒數: ' + remaining + ' 秒';
+                    } else {
+                        clearInterval(countdownTimer);
+                        cdSpan.innerText = '準備發送...';
+                    }
+                }, 1000);
+
+                autoTimer = setTimeout(function() {
+                    runLoop();
+                }, sec * 1000);
+            }
+
+            async function executeTask() {
                 var btn = document.getElementById('start-btn');
                 var logBox = document.getElementById('log-box');
                 
@@ -129,12 +207,14 @@ app.get('/', (req, res) => {
 
                 if (selectedIndexes.length === 0) {
                     alert('請至少勾選一個連結！');
+                    stopAutoLoop();
                     return;
                 }
 
+                isRunning = true;
                 btn.disabled = true;
                 btn.innerText = '發送中...';
-                logBox.innerHTML = '<span class="log-info">正在發送選中的 ' + selectedIndexes.length + ' 筆資料...</span>\\n';
+                logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + '] 開始發送選中的 ' + selectedIndexes.length + ' 筆資料...</span><br>';
 
                 try {
                     var response = await fetch('/run-task', {
@@ -154,11 +234,15 @@ app.get('/', (req, res) => {
                         logBox.scrollTop = logBox.scrollHeight;
                     }
                 } catch (err) {
-                    logBox.innerHTML += '<span class="log-err">執行發生錯誤: ' + err.message + '</span>\\n';
+                    logBox.innerHTML += '<span class="log-err">執行發生錯誤: ' + err.message + '</span><br>';
                 } finally {
-                    btn.disabled = false;
-                    btn.innerText = '開始發送勾選的數據';
-                    logBox.innerHTML += '\\n<span class="log-info">=== 任務執行完畢 ===</span>\\n';
+                    isRunning = false;
+                    if (!document.getElementById('auto-repeat-chk').checked) {
+                        btn.disabled = false;
+                        btn.innerText = '單次發送 / 啟動自動重複';
+                    }
+                    logBox.innerHTML += '<span class="log-info">=== 本次任務執行完畢 ===</span><br>';
+                    logBox.scrollTop = logBox.scrollHeight;
                 }
             }
         </script>
@@ -173,14 +257,17 @@ app.post('/run-task', async (req, res) => {
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Transfer-Encoding', 'chunked');
 
-  res.write('開始向 GA4 發送選中的 ' + selectedIndexes.length + ' 個網頁數據...<br><br>');
+  res.write('開始處理發送任務...<br>');
 
   for (var i = 0; i < selectedIndexes.length; i++) {
     var targetIndex = selectedIndexes[i];
     var target = targetUrls[targetIndex];
     
     var clientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
+    
+    // GA4 正式 Endpoint 與 驗證 (Debug) Endpoint
     var gaEndpoint = 'https://www.google-analytics.com/g/collect';
+    var debugEndpoint = 'https://www.google-analytics.com/debug/g/collect';
 
     var params = {
       v: '2',
@@ -193,14 +280,28 @@ app.post('/run-task', async (req, res) => {
     };
 
     try {
+      // 1. 發送正式數據
       var response = await axios.get(gaEndpoint, { 
         params,
         headers: { 'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15' },
         timeout: 5000 
       });
 
+      // 2. 呼叫 GA4 Debug Server 驗證數據是否符合格式規範
+      var debugMsg = '';
+      try {
+        var debugRes = await axios.get(debugEndpoint, { params, timeout: 3000 });
+        if (debugRes.data && debugRes.data.validationMessages && debugRes.data.validationMessages.length > 0) {
+          debugMsg = ' <span class="log-warn">[GA4驗證提示: ' + JSON.stringify(debugRes.data.validationMessages) + ']</span>';
+        } else {
+          debugMsg = ' <span style="color: #64748b;">(GA4後台驗證OK)</span>';
+        }
+      } catch (dErr) {
+        debugMsg = ' <span style="color: #64748b;">(驗證請求略過)</span>';
+      }
+
       if (response.status === 200 || response.status === 204) {
-        res.write('<span style="color: #34d399;">[成功] (' + (i + 1) + '/' + selectedIndexes.length + ') ' + target.name + ' 已送達</span><br>');
+        res.write('<span style="color: #34d399;">[成功] (' + (i + 1) + '/' + selectedIndexes.length + ') ' + target.name + ' 已送達</span>' + debugMsg + '<br>');
       }
     } catch (error) {
       res.write('<span style="color: #f87171;">[失敗] (' + (i + 1) + '/' + selectedIndexes.length + ') ' + target.name + ' 失敗: ' + error.message + '</span><br>');
@@ -209,7 +310,7 @@ app.post('/run-task', async (req, res) => {
     await new Promise(resolve => setTimeout(resolve, 300));
   }
 
-  res.write('<br><b>選中的網頁數據全部發送完畢！</b>');
+  res.write('<b>選中的網頁數據全部發送完畢！</b><br>');
   res.end();
 });
 
