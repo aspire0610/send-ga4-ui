@@ -44,6 +44,10 @@ const targetUrls = [
 
 const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
 
+// 1. 設定固定的 Client ID 與 User-Agent (代表同一個使用者)
+const fixedClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
+const fixedUA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36';
+
 app.get('/', (req, res) => {
   let checkboxesHtml = targetUrls.map((item, index) => `
     <div style="margin-bottom: 10px;">
@@ -306,29 +310,22 @@ app.post('/run-task', async (req, res) => {
 
   res.write('開始處理發送任務...<br>');
 
-  const userAgents = [
-    'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1',
-    'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.80 Mobile Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/123.0.6312.52 Mobile/15E148 Safari/604.1'
-  ];
+  // 本次任務使用固定的 Session ID
+  const sessionId = Math.floor(Date.now() / 1000).toString();
 
   for (var i = 0; i < selectedIndexes.length; i++) {
     var targetIndex = selectedIndexes[i];
     var target = targetUrls[targetIndex];
     
-    var clientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
-    var sessionId = Math.floor(Date.now() / 1000).toString();
-    var randomUA = userAgents[Math.floor(Math.random() * userAgents.length)];
-    var engagementTimeMs = Math.floor(Math.random() * 2500) + 1500;
+    // 使用全域固定的 fixedClientId 與 fixedUA，模擬真實使用者連續行為
+    var engagementTimeMs = Math.floor(Math.random() * 3000) + 2000;
 
     var gaEndpoint = 'https://www.google-analytics.com/g/collect';
 
     var params = {
       v: '2',
       tid: MEASUREMENT_ID,
-      cid: clientId,
+      cid: fixedClientId,
       sid: sessionId,
       sct: '1',
       seg: '1',
@@ -345,7 +342,7 @@ app.post('/run-task', async (req, res) => {
       '<b>cid:</b> ' + params.cid + ' | ' +
       '<b>sid:</b> ' + params.sid + ' | ' +
       '<b>_et:</b> ' + params._et + 'ms' +
-      '<br><span style="padding-left: 80px;"><b>UA:</b> ' + randomUA.substring(0, 45) + '...</span>' +
+      '<br><span style="padding-left: 80px;"><b>UA:</b> ' + fixedUA.substring(0, 45) + '...</span>' +
       '<br><span style="padding-left: 80px;"><b>dt:</b> ' + params.dt + '</span>' +
       '<br><span style="padding-left: 80px;"><b>dl:</b> ' + params.dl + '</span>' +
       '</div>';
@@ -353,7 +350,7 @@ app.post('/run-task', async (req, res) => {
     try {
       var response = await axios.get(gaEndpoint, { 
         params,
-        headers: { 'User-Agent': randomUA },
+        headers: { 'User-Agent': fixedUA },
         timeout: 5000 
       });
 
@@ -364,7 +361,11 @@ app.post('/run-task', async (req, res) => {
       res.write('<span style="color: #f87171;">[失敗] (' + (i + 1) + '/' + selectedIndexes.length + ') ' + target.name + ' 失敗: ' + error.message + '</span><br>' + paramLogHtml);
     }
 
-    await new Promise(resolve => setTimeout(resolve, 2500));
+    // 2. 將間隔時間拉長至 5～10 秒 之間的隨機毫秒數 (5000ms ~ 10000ms)
+    if (i < selectedIndexes.length - 1) {
+      var delayMs = Math.floor(Math.random() * 5000) + 5000;
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
   }
 
   res.write('<b>選中的網頁數據發送完畢！</b><br>');
