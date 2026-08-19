@@ -298,25 +298,26 @@ app.post('/run-task', async (req, res) => {
 
     res.write('開始處理發送任務...<br>');
 
-    // 每輪固定一個 cid (代表同一個使用者造訪)
-    const currentRunClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
-
     for (let i = 0; i < selectedIndexes.length; i++) {
       const targetIndex = selectedIndexes[i];
       const target = targetUrls[targetIndex];
 
       if (!target) continue;
 
-      const currentSessionId = (Math.floor(Date.now() / 1000) + i).toString();
+      // 【核心修改 1】每一筆都獨立產生全新的 Client ID (cid)
+      const uniqueClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
+
+      // 【核心修改 2】每一筆都獨立產生全新的 Session ID (sid)，且固定 Session 次數 (sct) 為 1
+      const uniqueSessionId = Math.floor(Date.now() / 1000).toString();
       const engagementTimeMs = Math.floor(Math.random() * 3000) + 2000;
       const gaEndpoint = 'https://www.google-analytics.com/g/collect';
 
       const params = {
         v: '2',
         tid: MEASUREMENT_ID,
-        cid: currentRunClientId,
-        sid: currentSessionId,
-        sct: (i + 1).toString(),
+        cid: uniqueClientId,     // 獨立訪客
+        sid: uniqueSessionId,    // 獨立工作階段
+        sct: '1',                // 該訪客的第一次造訪
         seg: '1',
         _p: Math.floor(Math.random() * 100000).toString(),
         _et: engagementTimeMs.toString(),
@@ -326,7 +327,7 @@ app.post('/run-task', async (req, res) => {
       };
 
       const paramLogHtml = `<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">
-        ↳ <b>[發送參數]</b> <b>tid:</b> ${params.tid} | <b>cid:</b> ${params.cid} | <b>sid:</b> ${params.sid} | <b>sct:</b> ${params.sct} | <b>_et:</b> ${params._et}ms
+        ↳ <b>[發送參數]</b> <b>tid:</b> ${params.tid} | <b>cid:</b> ${params.cid} | <b>sid:</b> ${params.sid} | <b>sct:</b> ${params.sct}
         <br><span style="padding-left: 80px;"><b>dt:</b> ${params.dt}</span>
         <br><span style="padding-left: 80px;"><b>dl:</b> ${params.dl}</span>
       </div>`;
@@ -345,9 +346,9 @@ app.post('/run-task', async (req, res) => {
         res.write(`<span style="color: #f87171;">[失敗] (${i + 1}/${selectedIndexes.length}) ${target.name} 失敗: ${error.message}</span><br>${paramLogHtml}`);
       }
 
-      // 每次發送之間隨機間隔 10～15 秒
+      // 每次發送之間間隔 2～3 秒即可（無需等待 10~15 秒）
       if (i < selectedIndexes.length - 1) {
-        const delayMs = Math.floor(Math.random() * 5000) + 10000;
+        const delayMs = Math.floor(Math.random() * 1000) + 2000;
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
     }
@@ -359,6 +360,7 @@ app.post('/run-task', async (req, res) => {
     res.end();
   }
 });
+
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`UI 介面已啟動！請在瀏覽器開啟: http://localhost:${PORT}`);
