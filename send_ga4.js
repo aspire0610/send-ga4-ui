@@ -45,7 +45,21 @@ const targetUrls = [
 ];
 
 const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
-const fixedUA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36';
+
+// 常用跨平台 User-Agent 清單（包含桌面端與行動端）
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3.1 Safari/605.1.15',
+  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1',
+  'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.80 Mobile Safari/537.36'
+];
+
+// 取得隨機 User-Agent 的輔助函式
+function getRandomUserAgent() {
+  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+}
 
 app.get('/', (req, res) => {
   const checkboxesHtml = targetUrls.map((item, index) => `
@@ -304,20 +318,23 @@ app.post('/run-task', async (req, res) => {
 
       if (!target) continue;
 
-      // 【核心修改 1】每一筆都獨立產生全新的 Client ID (cid)
+      // 1. 每一筆都獨立產生全新的 Client ID (cid)
       const uniqueClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
 
-      // 【核心修改 2】每一筆都獨立產生全新的 Session ID (sid)，且固定 Session 次數 (sct) 為 1
+      // 2. 每一筆都獨立產生全新的 Session ID (sid)
       const uniqueSessionId = Math.floor(Date.now() / 1000).toString();
       const engagementTimeMs = Math.floor(Math.random() * 3000) + 2000;
       const gaEndpoint = 'https://www.google-analytics.com/g/collect';
+
+      // 3. 隨機抽選 User-Agent
+      const dynamicUserAgent = getRandomUserAgent();
 
       const params = {
         v: '2',
         tid: MEASUREMENT_ID,
         cid: uniqueClientId,     // 獨立訪客
         sid: uniqueSessionId,    // 獨立工作階段
-        sct: '1',                // 該訪客的第一次造訪
+        sct: '1',                // 第一次造訪
         seg: '1',
         _p: Math.floor(Math.random() * 100000).toString(),
         _et: engagementTimeMs.toString(),
@@ -335,7 +352,7 @@ app.post('/run-task', async (req, res) => {
       try {
         const response = await axios.get(gaEndpoint, {
           params,
-          headers: { 'User-Agent': fixedUA },
+          headers: { 'User-Agent': dynamicUserAgent },
           timeout: 5000
         });
 
@@ -346,7 +363,7 @@ app.post('/run-task', async (req, res) => {
         res.write(`<span style="color: #f87171;">[失敗] (${i + 1}/${selectedIndexes.length}) ${target.name} 失敗: ${error.message}</span><br>${paramLogHtml}`);
       }
 
-      // 每次發送之間間隔 2～3 秒即可（無需等待 10~15 秒）
+      // 每次發送隨機間隔 2～3 秒
       if (i < selectedIndexes.length - 1) {
         const delayMs = Math.floor(Math.random() * 1000) + 2000;
         await new Promise(resolve => setTimeout(resolve, delayMs));
@@ -360,7 +377,6 @@ app.post('/run-task', async (req, res) => {
     res.end();
   }
 });
-
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`UI 介面已啟動！請在瀏覽器開啟: http://localhost:${PORT}`);
