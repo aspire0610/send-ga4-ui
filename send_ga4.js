@@ -227,7 +227,7 @@ app.get('/', (req, res) => {
 
                 autoTimer = setTimeout(function() {
                     if (!isStopped) startNextLoop();
-                }, sec * 1000);
+                }, sec * 2000);
             }
 
             async function executeTask() {
@@ -350,7 +350,7 @@ app.post('/run-task', async (req, res) => {
       '<b>cid:</b> ' + params.cid + ' | ' +
       '<b>sid:</b> ' + params.sid + ' | ' +
       '<b>sct:</b> ' + params.sct + ' | ' +
-      '<b>_et:</b> ' + params._et + ' ms<br>' +
+      '<b>_et:</b> ' + params._et + 
       '<span style="padding-left: 80px;"><b>UA:</b> ' + randomUA.substring(0, 50) + '...</span><br>' +
       '<span style="padding-left: 80px;"><b>dt:</b> ' + params.dt + '</span><br>' +
       '<span style="padding-left: 80px;"><b>dl:</b> ' + params.dl + '</span>' +
@@ -365,7 +365,7 @@ app.post('/run-task', async (req, res) => {
 
       var debugMsg = '';
       try {
-        var debugRes = await axios.get(debugEndpoint, { params, headers: { 'User-Agent': randomUA }, timeout: 3000 });
+        var debugRes = await axios.get(debugEndpoint, { params, headers: { 'User-Agent': randomUA }, timeout: 5000 });
         if (debugRes.data && debugRes.data.validationMessages && debugRes.data.validationMessages.length > 0) {
           debugMsg = ' <span class="log-warn">[GA4驗證提示: ' + JSON.stringify(debugRes.data.validationMessages) + ']</span>';
         } else {
