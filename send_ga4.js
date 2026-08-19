@@ -44,8 +44,7 @@ const targetUrls = [
 
 const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
 
-// 設定固定的 Client ID 與 User-Agent (代表同一個使用者)
-const fixedClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
+// 設定固定的 User-Agent
 const fixedUA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36';
 
 app.get('/', (req, res) => {
@@ -310,11 +309,14 @@ app.post('/run-task', async (req, res) => {
 
   res.write('開始處理發送任務...<br>');
 
+  // 本輪發送使用固定的 Client ID (模擬同一個使用者進行多次造訪)
+  const currentRunClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
+
   for (var i = 0; i < selectedIndexes.length; i++) {
     var targetIndex = selectedIndexes[i];
     var target = targetUrls[targetIndex];
     
-    // 1. 動態產生獨立 Session ID（加上索引 i 確保即便在高頻處理時 timestamp 也不重複）
+    // 1. 每次發送皆動態生成獨立的 Session ID
     const currentSessionId = (Math.floor(Date.now() / 1000) + i).toString();
     var engagementTimeMs = Math.floor(Math.random() * 3000) + 2000;
     var gaEndpoint = 'https://www.google-analytics.com/g/collect';
@@ -322,9 +324,9 @@ app.post('/run-task', async (req, res) => {
     var params = {
       v: '2',
       tid: MEASUREMENT_ID,
-      cid: fixedClientId,
-      sid: currentSessionId,   // 動態生成的獨立 Session ID
-      sct: (i + 1).toString(), // 造訪次數隨發送遞增，模擬真實使用者累積
+      cid: currentRunClientId, // 本輪固定 cid (同使用者)
+      sid: currentSessionId,   // 動態生成獨立 sid
+      sct: (i + 1).toString(), // 造訪次數遞增
       seg: '1',
       _p: Math.floor(Math.random() * 100000),
       _et: engagementTimeMs,
@@ -348,7 +350,7 @@ app.post('/run-task', async (req, res) => {
     try {
       var response = await axios.get(gaEndpoint, { 
         params,
-        headers: { 'User-Agent': fixedUA },
+        headers: { 'User-Agent': fixedUA }, // 固定 User-Agent
         timeout: 5000 
       });
 
@@ -359,9 +361,9 @@ app.post('/run-task', async (req, res) => {
       res.write('<span style="color: #f87171;">[失敗] (' + (i + 1) + '/' + selectedIndexes.length + ') ' + target.name + ' 失敗: ' + error.message + '</span><br>' + paramLogHtml);
     }
 
-    // 2. 隨機間隔 5～10 秒，保護請求不觸發過濾機制
+    // 2. 隨機間隔 10～15 秒，避免高頻請求觸發 GA4 防護過濾機制
     if (i < selectedIndexes.length - 1) {
-      var delayMs = Math.floor(Math.random() * 5000) + 5000;
+      var delayMs = Math.floor(Math.random() * 5000) + 10000;
       await new Promise(resolve => setTimeout(resolve, delayMs));
     }
   }
