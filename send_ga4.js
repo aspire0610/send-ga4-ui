@@ -1,7 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
@@ -116,7 +116,7 @@ app.get('/', (req, res) => {
                 </label>
                 <label>
                     間隔 (秒): 
-                    <input type="number" id="interval-sec" value="60" min="5">
+                    <input type="number" id="interval-sec" value="60" min="10">
                 </label>
                 <label>
                     重複次數: 
@@ -138,7 +138,6 @@ app.get('/', (req, res) => {
             var autoTimer = null;
             var countdownTimer = null;
             var isStopped = false;
-            var isSending = false;
             var currentRunCount = 0;
             var maxRuns = 1;
             var currentController = null;
@@ -227,7 +226,7 @@ app.get('/', (req, res) => {
 
                 autoTimer = setTimeout(function() {
                     if (!isStopped) startNextLoop();
-                }, sec * 2000);
+                }, sec * 1000);
             }
 
             async function executeTask() {
@@ -246,7 +245,6 @@ app.get('/', (req, res) => {
                     return;
                 }
 
-                isSending = true;
                 btn.disabled = true;
                 
                 var isAuto = document.getElementById('auto-repeat-chk').checked;
@@ -284,7 +282,6 @@ app.get('/', (req, res) => {
                         logBox.innerHTML += '<span class="log-err">執行發生錯誤: ' + err.message + '</span><br>';
                     }
                 } finally {
-                    isSending = false;
                     currentController = null;
                     if (!isAuto && !isStopped) {
                         btn.disabled = false;
@@ -323,19 +320,17 @@ app.post('/run-task', async (req, res) => {
     
     var clientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
     var sessionId = Math.floor(Date.now() / 1000).toString();
-    var sessionCount = '1';
     var randomUA = userAgents[Math.floor(Math.random() * userAgents.length)];
-    var engagementTimeMs = Math.floor(Math.random() * 2500) + 1000;
+    var engagementTimeMs = Math.floor(Math.random() * 2500) + 1500;
 
     var gaEndpoint = 'https://www.google-analytics.com/g/collect';
-    var debugEndpoint = 'https://www.google-analytics.com/debug/g/collect';
 
     var params = {
       v: '2',
       tid: MEASUREMENT_ID,
       cid: clientId,
       sid: sessionId,
-      sct: sessionCount,
+      sct: '1',
       seg: '1',
       _p: Math.floor(Math.random() * 100000),
       _et: engagementTimeMs,
@@ -349,11 +344,9 @@ app.post('/run-task', async (req, res) => {
       '<b>tid:</b> ' + params.tid + ' | ' +
       '<b>cid:</b> ' + params.cid + ' | ' +
       '<b>sid:</b> ' + params.sid + ' | ' +
-      '<b>sct:</b> ' + params.sct + ' | ' +
-      '<b>_et:</b> ' + params._et + 
-      '<span style="padding-left: 80px;"><b>UA:</b> ' + randomUA.substring(0, 50) + '...</span><br>' +
-      '<span style="padding-left: 80px;"><b>dt:</b> ' + params.dt + '</span><br>' +
-      '<span style="padding-left: 80px;"><b>dl:</b> ' + params.dl + '</span>' +
+      '<b>_et:</b> ' + params._et + 'ms' +
+      '<br><span style="padding-left: 80px;"><b>UA:</b> ' + randomUA.substring(0, 45) + '...</span>' +
+      '<br><span style="padding-left: 80px;"><b>dt:</b> ' + params.dt + '</span>' +
       '</div>';
 
     try {
@@ -363,26 +356,15 @@ app.post('/run-task', async (req, res) => {
         timeout: 5000 
       });
 
-      var debugMsg = '';
-      try {
-        var debugRes = await axios.get(debugEndpoint, { params, headers: { 'User-Agent': randomUA }, timeout: 5000 });
-        if (debugRes.data && debugRes.data.validationMessages && debugRes.data.validationMessages.length > 0) {
-          debugMsg = ' <span class="log-warn">[GA4驗證提示: ' + JSON.stringify(debugRes.data.validationMessages) + ']</span>';
-        } else {
-          debugMsg = ' <span style="color: #64748b;">(GA4後台驗證OK)</span>';
-        }
-      } catch (dErr) {
-        debugMsg = ' <span style="color: #64748b;">(驗證請求略過)</span>';
-      }
-
       if (response.status === 200 || response.status === 204) {
-        res.write('<span style="color: #34d399;">[成功] (' + (i + 1) + '/' + selectedIndexes.length + ') ' + target.name + ' 已送達</span>' + debugMsg + '<br>' + paramLogHtml);
+        res.write('<span style="color: #34d399;">[成功] (' + (i + 1) + '/' + selectedIndexes.length + ') ' + target.name + ' 已送達</span><br>' + paramLogHtml);
       }
     } catch (error) {
       res.write('<span style="color: #f87171;">[失敗] (' + (i + 1) + '/' + selectedIndexes.length + ') ' + target.name + ' 失敗: ' + error.message + '</span><br>' + paramLogHtml);
     }
 
-    await new Promise(resolve => setTimeout(resolve, 300));
+    // 發送間隔拉長至 2.5 秒，避免觸發 GA4 防垃圾流量機制
+    await new Promise(resolve => setTimeout(resolve, 2500));
   }
 
   res.write('<b>選中的網頁數據發送完畢！</b><br>');
@@ -390,5 +372,5 @@ app.post('/run-task', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log('UI 介面已啟動！請在瀏覽器打開：http://localhost:' + PORT);
+  console.log('UI 介面已啟動！預設連接埠：' + PORT);
 });
