@@ -44,7 +44,7 @@ const targetUrls = [
 
 const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
 
-// 1. 設定固定的 Client ID 與 User-Agent (代表同一個使用者)
+// 設定固定的 Client ID 與 User-Agent (代表同一個使用者)
 const fixedClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
 const fixedUA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36';
 
@@ -310,24 +310,21 @@ app.post('/run-task', async (req, res) => {
 
   res.write('開始處理發送任務...<br>');
 
-  // 本次任務使用固定的 Session ID
-  const sessionId = Math.floor(Date.now() / 1000).toString();
-
   for (var i = 0; i < selectedIndexes.length; i++) {
     var targetIndex = selectedIndexes[i];
     var target = targetUrls[targetIndex];
     
-    // 使用全域固定的 fixedClientId 與 fixedUA，模擬真實使用者連續行為
+    // 1. 動態產生獨立 Session ID（加上索引 i 確保即便在高頻處理時 timestamp 也不重複）
+    const currentSessionId = (Math.floor(Date.now() / 1000) + i).toString();
     var engagementTimeMs = Math.floor(Math.random() * 3000) + 2000;
-
     var gaEndpoint = 'https://www.google-analytics.com/g/collect';
 
     var params = {
       v: '2',
       tid: MEASUREMENT_ID,
       cid: fixedClientId,
-      sid: sessionId,
-      sct: '1',
+      sid: currentSessionId,   // 動態生成的獨立 Session ID
+      sct: (i + 1).toString(), // 造訪次數隨發送遞增，模擬真實使用者累積
       seg: '1',
       _p: Math.floor(Math.random() * 100000),
       _et: engagementTimeMs,
@@ -341,6 +338,7 @@ app.post('/run-task', async (req, res) => {
       '<b>tid:</b> ' + params.tid + ' | ' +
       '<b>cid:</b> ' + params.cid + ' | ' +
       '<b>sid:</b> ' + params.sid + ' | ' +
+      '<b>sct:</b> ' + params.sct + ' | ' +
       '<b>_et:</b> ' + params._et + 'ms' +
       '<br><span style="padding-left: 80px;"><b>UA:</b> ' + fixedUA.substring(0, 45) + '...</span>' +
       '<br><span style="padding-left: 80px;"><b>dt:</b> ' + params.dt + '</span>' +
@@ -361,7 +359,7 @@ app.post('/run-task', async (req, res) => {
       res.write('<span style="color: #f87171;">[失敗] (' + (i + 1) + '/' + selectedIndexes.length + ') ' + target.name + ' 失敗: ' + error.message + '</span><br>' + paramLogHtml);
     }
 
-    // 2. 將間隔時間拉長至 5～10 秒 之間的隨機毫秒數 (5000ms ~ 10000ms)
+    // 2. 隨機間隔 5～10 秒，保護請求不觸發過濾機制
     if (i < selectedIndexes.length - 1) {
       var delayMs = Math.floor(Math.random() * 5000) + 5000;
       await new Promise(resolve => setTimeout(resolve, delayMs));
