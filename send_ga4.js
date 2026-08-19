@@ -347,6 +347,7 @@ app.post('/run-task', async (req, res) => {
       '<b>_et:</b> ' + params._et + 'ms' +
       '<br><span style="padding-left: 80px;"><b>UA:</b> ' + randomUA.substring(0, 45) + '...</span>' +
       '<br><span style="padding-left: 80px;"><b>dt:</b> ' + params.dt + '</span>' +
+      '<br><span style="padding-left: 80px;"><b>dl:</b> ' + params.dl + '</span>' +
       '</div>';
 
     try {
@@ -363,7 +364,6 @@ app.post('/run-task', async (req, res) => {
       res.write('<span style="color: #f87171;">[失敗] (' + (i + 1) + '/' + selectedIndexes.length + ') ' + target.name + ' 失敗: ' + error.message + '</span><br>' + paramLogHtml);
     }
 
-    // 發送間隔拉長至 2.5 秒，避免觸發 GA4 防垃圾流量機制
     await new Promise(resolve => setTimeout(resolve, 2500));
   }
 
