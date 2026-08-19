@@ -343,11 +343,14 @@ app.post('/run-task', async (req, res) => {
         en: 'page_view'
       };
 
-      const paramLogHtml = `<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">
-        ↳ <b>[發送參數]</b> <b>tid:</b> ${params.tid} | <b>cid:</b> ${params.cid} | <b>sid:</b> ${params.sid} | <b>sct:</b> ${params.sct}
-        <br><span style="padding-left: 80px;"><b>dt:</b> ${params.dt}</span>
-        <br><span style="padding-left: 80px;"><b>dl:</b> ${params.dl}</span>
-      </div>`;
+      // 修改後的 paramLogHtml 程式碼區塊
+const paramLogHtml = `<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">
+  ↳ <b>[發送參數]</b> <b>tid:</b> ${params.tid} | <b>cid:</b> ${params.cid} | <b>sid:</b> ${params.sid} | <b>sct:</b> ${params.sct}
+  <br><span style="padding-left: 80px;"><b>ua:</b> ${dynamicUserAgent}</span>
+  <br><span style="padding-left: 80px;"><b>dt:</b> ${params.dt}</span>
+  <br><span style="padding-left: 80px;"><b>dl:</b> ${params.dl}</span>
+</div>`;
+
 
       try {
         const response = await axios.get(gaEndpoint, {
