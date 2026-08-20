@@ -1,5 +1,4 @@
 const express = require('express');
-const axios = require('axios');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
@@ -46,21 +45,6 @@ const targetUrls = [
 
 const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
 
-// 常用跨平台 User-Agent 清單（包含桌面端與行動端）
-const USER_AGENTS = [
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3.1 Safari/605.1.15',
-  'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4.1 Mobile/15E148 Safari/604.1',
-  'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.6312.80 Mobile Safari/537.36'
-];
-
-// 取得隨機 User-Agent 的輔助函式
-function getRandomUserAgent() {
-  return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-}
-
 app.get('/', (req, res) => {
   const checkboxesHtml = targetUrls.map((item, index) => `
     <div style="margin-bottom: 10px;">
@@ -105,7 +89,7 @@ app.get('/', (req, res) => {
     </head>
     <body>
         <div class="container">
-            <h1>📊 GA4 選擇性發送控制台</h1>
+            <h1>📊 GA4 選擇性發送控制台 (前端直連版)</h1>
             <p>請勾選要發送的目標連結：</p>
             
             <div class="actions">
@@ -148,7 +132,6 @@ app.get('/', (req, res) => {
             var isStopped = false;
             var currentRunCount = 0;
             var maxRuns = 1;
-            var currentController = null;
 
             function toggleAll(status) {
                 var checkboxes = document.querySelectorAll('input[name="urlIndex"]');
@@ -182,7 +165,6 @@ app.get('/', (req, res) => {
                 isStopped = true;
                 clearTimeout(autoTimer);
                 clearInterval(countdownTimer);
-                if (currentController) currentController.abort();
 
                 updateStatus('🛑 已停止自動發送', '#f87171');
                 document.getElementById('start-btn').style.display = 'inline-block';
@@ -253,36 +235,52 @@ app.get('/', (req, res) => {
                 updateStatus('⏳ ' + runTag + ' 數據發送中...', '#f59e0b');
                 logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + ']' + runTag + ' 開始發送選中的 ' + selectedIndexes.length + ' 筆資料...</span><br>';
 
-                currentController = new AbortController();
-
                 try {
-                    var response = await fetch('/run-task', {
+                    // 1. 向後端索取組好的參數清單
+                    var res = await fetch('/run-task', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ indexes: selectedIndexes }),
-                        signal: currentController.signal
+                        body: JSON.stringify({ indexes: selectedIndexes })
                     });
+                    
+                    var data = await res.json();
 
-                    if (!response.ok) {
-                        throw new Error('HTTP 錯誤碼: ' + response.status);
-                    }
+                    if (data.success && data.items) {
+                        for (var i = 0; i < data.items.length; i++) {
+                            if (isStopped) break;
 
-                    var reader = response.body.getReader();
-                    var decoder = new TextDecoder();
+                            var item = data.items[i];
+                            var queryParams = new URLSearchParams(item.params).toString();
+                            var targetUrl = 'https://www.google-analytics.com/g/collect?' + queryParams;
 
-                    while (true) {
-                        var result = await reader.read();
-                        if (result.done || isStopped) break;
-                        var chunk = decoder.decode(result.value, { stream: true });
-                        logBox.innerHTML += chunk;
-                        logBox.scrollTop = logBox.scrollHeight;
+                            // 2. 由使用者瀏覽器直接發送給 GA4（走使用者真實 IP/UA，避開機房封鎖）
+                            try {
+                                await fetch(targetUrl, { mode: 'no-cors' });
+
+                                var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
+                                  '↳ <b>[發送參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>sct:</b> ' + item.params.sct + '<br>' +
+                                  '<span style="padding-left: 80px;"><b>ua:</b> (使用目前造訪瀏覽器真實 UA)</span><br>' +
+                                  '<span style="padding-left: 80px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
+                                  '<span style="padding-left: 80px;"><b>dl:</b> ' + item.params.dl + '</span>' +
+                                '</div>';
+
+                                logBox.innerHTML += '<span style="color: #34d399;">[成功] (' + (i + 1) + '/' + data.items.length + ') ' + item.name + ' 已送達</span><br>' + paramLogHtml;
+                            } catch (sendErr) {
+                                logBox.innerHTML += '<span style="color: #f87171;">[失敗] (' + (i + 1) + '/' + data.items.length + ') ' + item.name + ' 失敗: ' + sendErr.message + '</span><br>';
+                            }
+
+                            logBox.scrollTop = logBox.scrollHeight;
+
+                            // 每次發送隨機間隔 2～3 秒
+                            if (i < data.items.length - 1) {
+                                var delayMs = Math.floor(Math.random() * 1000) + 2000;
+                                await new Promise(function(resolve) { setTimeout(resolve, delayMs); });
+                            }
+                        }
                     }
                 } catch (err) {
-                    if (err.name !== 'AbortError') {
-                        logBox.innerHTML += '<span class="log-err">執行發生錯誤: ' + err.message + '</span><br>';
-                    }
+                    logBox.innerHTML += '<span class="log-err">執行發生錯誤: ' + err.message + '</span><br>';
                 } finally {
-                    currentController = null;
                     if (!isAuto && !isStopped) {
                         btn.disabled = false;
                         btn.innerText = '單次發送 / 啟動自動重複';
@@ -298,86 +296,44 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.post('/run-task', async (req, res) => {
+// 後端僅負責產出不重複的 CID / SID 參數
+app.post('/run-task', (req, res) => {
   try {
     const selectedIndexes = (req.body && Array.isArray(req.body.indexes)) ? req.body.indexes : [];
 
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.setHeader('Transfer-Encoding', 'chunked');
-
     if (selectedIndexes.length === 0) {
-      res.write('<span style="color: #f87171;">[錯誤] 未收到有效的選取索引。</span><br>');
-      return res.end();
+      return res.status(400).json({ success: false, message: '未收到有效的選取索引。' });
     }
 
-    res.write('開始處理發送任務...<br>');
-
-    for (let i = 0; i < selectedIndexes.length; i++) {
-      const targetIndex = selectedIndexes[i];
+    const items = selectedIndexes.map(targetIndex => {
       const target = targetUrls[targetIndex];
+      if (!target) return null;
 
-      if (!target) continue;
-
-      // 1. 每一筆都獨立產生全新的 Client ID (cid)
       const uniqueClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
-
-      // 2. 每一筆都獨立產生全新的 Session ID (sid)
       const uniqueSessionId = Math.floor(Date.now() / 1000).toString();
       const engagementTimeMs = Math.floor(Math.random() * 3000) + 2000;
-      const gaEndpoint = 'https://www.google-analytics.com/g/collect';
 
-      // 3. 隨機抽選 User-Agent
-      const dynamicUserAgent = getRandomUserAgent();
-
-      const params = {
-        v: '2',
-        tid: MEASUREMENT_ID,
-        cid: uniqueClientId,     // 獨立訪客
-        sid: uniqueSessionId,    // 獨立工作階段
-        sct: '1',                // 第一次造訪
-        seg: '1',
-        _p: Math.floor(Math.random() * 100000).toString(),
-        _et: engagementTimeMs.toString(),
-        dl: target.url,
-        dt: target.name,
-        en: 'page_view'
-      };
-
-      // 修改後的 paramLogHtml 程式碼區塊
-const paramLogHtml = `<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">
-  ↳ <b>[發送參數]</b> <b>tid:</b> ${params.tid} | <b>cid:</b> ${params.cid} | <b>sid:</b> ${params.sid} | <b>sct:</b> ${params.sct}
-  <br><span style="padding-left: 80px;"><b>ua:</b> ${dynamicUserAgent}</span>
-  <br><span style="padding-left: 80px;"><b>dt:</b> ${params.dt}</span>
-  <br><span style="padding-left: 80px;"><b>dl:</b> ${params.dl}</span>
-</div>`;
-
-
-      try {
-        const response = await axios.get(gaEndpoint, {
-          params,
-          headers: { 'User-Agent': dynamicUserAgent },
-          timeout: 5000
-        });
-
-        if (response.status === 200 || response.status === 204) {
-          res.write(`<span style="color: #34d399;">[成功] (${i + 1}/${selectedIndexes.length}) ${target.name} 已送達</span><br>${paramLogHtml}`);
+      return {
+        name: target.name,
+        params: {
+          v: '2',
+          tid: MEASUREMENT_ID,
+          cid: uniqueClientId,
+          sid: uniqueSessionId,
+          sct: '1',
+          seg: '1',
+          _p: Math.floor(Math.random() * 100000).toString(),
+          _et: engagementTimeMs.toString(),
+          dl: target.url,
+          dt: target.name,
+          en: 'page_view'
         }
-      } catch (error) {
-        res.write(`<span style="color: #f87171;">[失敗] (${i + 1}/${selectedIndexes.length}) ${target.name} 失敗: ${error.message}</span><br>${paramLogHtml}`);
-      }
+      };
+    }).filter(Boolean);
 
-      // 每次發送隨機間隔 2～3 秒
-      if (i < selectedIndexes.length - 1) {
-        const delayMs = Math.floor(Math.random() * 1000) + 2000;
-        await new Promise(resolve => setTimeout(resolve, delayMs));
-      }
-    }
-
-    res.write('<b>選中的網頁數據發送完畢！</b><br>');
-    res.end();
+    res.json({ success: true, items });
   } catch (globalErr) {
-    res.write(`<span style="color: #f87171;">[伺服器內部錯誤]: ${globalErr.message}</span><br>`);
-    res.end();
+    res.status(500).json({ success: false, message: globalErr.message });
   }
 });
 
