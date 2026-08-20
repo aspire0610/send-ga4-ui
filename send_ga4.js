@@ -80,6 +80,7 @@ app.get('/', (req, res) => {
             .auto-panel { background: #0f172a; border: 1px solid #334155; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
             .auto-panel label { color: #cbd5e1; font-size: 14px; display: flex; align-items: center; gap: 6px; }
             .auto-panel input[type="number"] { background: #1e293b; border: 1px solid #475569; color: white; padding: 6px 10px; border-radius: 6px; width: 80px; font-size: 14px; }
+            .ip-box { background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; }
             #log-box { background: #090d16; border: 1px solid #334155; border-radius: 8px; padding: 15px; height: 280px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #34d399; line-height: 1.5; }
             .log-err { color: #f87171; }
             .log-info { color: #60a5fa; }
@@ -102,6 +103,11 @@ app.get('/', (req, res) => {
             </div>
 
             <div class="auto-panel">
+                <div class="ip-box">
+                    <span>🌐 當前裝置 IP:</span>
+                    <span id="current-ip">抓取中...</span>
+                    <button type="button" class="btn-secondary" style="padding: 2px 8px; font-size: 11px;" onclick="fetchCurrentIp()">重新整理</button>
+                </div>
                 <label>
                     <input type="checkbox" id="auto-repeat-chk" style="width: 16px; height: 16px;">
                     啟用自動重複發送
@@ -132,6 +138,25 @@ app.get('/', (req, res) => {
             var isStopped = false;
             var currentRunCount = 0;
             var maxRuns = 1;
+            var currentIpAddress = '未知 IP';
+
+            // 抓取當前裝置公網 IP
+            async function fetchCurrentIp() {
+                var ipEl = document.getElementById('current-ip');
+                try {
+                    ipEl.innerText = '更新中...';
+                    var res = await fetch('https://api.ipify.org?format=json');
+                    var data = await res.json();
+                    currentIpAddress = data.ip;
+                    ipEl.innerText = currentIpAddress;
+                } catch (e) {
+                    currentIpAddress = '無法取得 IP';
+                    ipEl.innerText = currentIpAddress;
+                }
+            }
+
+            // 初始化頁面時立刻抓取 IP
+            window.addEventListener('DOMContentLoaded', fetchCurrentIp);
 
             function toggleAll(status) {
                 var checkboxes = document.querySelectorAll('input[name="urlIndex"]');
@@ -232,8 +257,11 @@ app.get('/', (req, res) => {
                 var isAuto = document.getElementById('auto-repeat-chk').checked;
                 var runTag = isAuto ? ' [第 ' + currentRunCount + '/' + maxRuns + ' 輪]' : '';
                 
+                // 發送前更新並記錄 IP
+                await fetchCurrentIp();
+
                 updateStatus('⏳ ' + runTag + ' 數據發送中...', '#f59e0b');
-                logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + ']' + runTag + ' 開始發送選中的 ' + selectedIndexes.length + ' 筆資料...</span><br>';
+                logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + ']' + runTag + ' 開始發送選中的 ' + selectedIndexes.length + ' 筆資料... (當前來源 IP: ' + currentIpAddress + ')</span><br>';
 
                 try {
                     // 1. 向後端索取組好的參數清單
@@ -265,6 +293,7 @@ app.get('/', (req, res) => {
                                 await fetch(targetUrl, { mode: 'no-cors' });
 
                                 var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
+                                  '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
                                   '↳ <b>[發送參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>gtm:</b> ' + item.params.gtm + '<br>' +
                                   '<span style="padding-left: 80px;"><b>gcs/gcd:</b> ' + item.params.gcs + ' / ' + item.params.gcd + ' | <b>ul/sr:</b> ' + item.params.ul + ' / ' + item.params.sr + '</span><br>' +
                                   '<span style="padding-left: 80px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
