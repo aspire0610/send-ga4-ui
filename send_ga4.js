@@ -279,7 +279,7 @@ app.get('/', (req, res) => {
 
                             var item = data.items[i];
 
-                            // 在發送當下即時更新 sid 與真實螢幕解析度 sr
+                            // 在發送當下即時更新 sid (作為 Session 秒數時間戳記) 與真實螢幕解析度 sr
                             item.params.sid = Math.floor(Date.now() / 1000).toString();
                             item.params.sr = (window.screen && window.screen.width && window.screen.height) 
                               ? (window.screen.width + 'x' + window.screen.height) 
@@ -294,8 +294,9 @@ app.get('/', (req, res) => {
 
                                 var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
                                   '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
-                                  '↳ <b>[發送參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>gtm:</b> ' + item.params.gtm + '<br>' +
-                                  '<span style="padding-left: 80px;"><b>gcs/gcd:</b> ' + item.params.gcs + ' / ' + item.params.gcd + ' | <b>ul/sr:</b> ' + item.params.ul + ' / ' + item.params.sr + '</span><br>' +
+                                  '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>_fv:</b> ' + item.params._fv + '<br>' +
+                                  '<span style="padding-left: 80px;"><b>UTM 歸因:</b> source=' + (item.params.cs||'none') + ' | medium=' + (item.params.cm||'none') + ' | campaign=' + (item.params.cn||'none') + '</span><br>' +
+                                  '<span style="padding-left: 80px;"><b>Consent Mode:</b> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
                                   '<span style="padding-left: 80px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
                                   '<span style="padding-left: 80px;"><b>dl:</b> ' + item.params.dl + '</span>' +
                                 '</div>';
@@ -307,9 +308,9 @@ app.get('/', (req, res) => {
 
                             logBox.scrollTop = logBox.scrollHeight;
 
-                            // 每次發送隨機間隔 2～3 秒
+                            // 每次發送隨機間隔 5～10 秒（拉長發送間隔，避開 GA4 頻率過高的垃圾過濾）
                             if (i < data.items.length - 1) {
-                                var delayMs = Math.floor(Math.random() * 1000) + 2000;
+                                var delayMs = Math.floor(Math.random() * 5000) + 5000;
                                 await new Promise(function(resolve) { setTimeout(resolve, delayMs); });
                             }
                         }
@@ -344,21 +345,37 @@ app.post('/run-task', (req, res) => {
       const target = targetUrls[targetIndex];
       if (!target) return null;
 
+      // 1. 動態生成 CID
       const uniqueClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
       const engagementTimeMs = Math.floor(Math.random() * 5000) + 10000;
+
+      // 2. 從 target.url 自動解析 UTM 參數
+      let utmSource = '';
+      let utmMedium = '';
+      let utmCampaign = '';
+
+      try {
+        const parsedUrl = new URL(target.url);
+        utmSource = parsedUrl.searchParams.get('utm_source') || '';
+        utmMedium = parsedUrl.searchParams.get('utm_medium') || '';
+        utmCampaign = parsedUrl.searchParams.get('utm_campaign') || '';
+      } catch (e) {
+        // 若網址解析異常時的靜態備用處理
+      }
 
       return {
         name: target.name,
         params: {
           v: '2',
           tid: MEASUREMENT_ID,
-          gtm: '45je68e1v89223874',           // 統一預設 GTM 標記
+          gtm: '45je68e1v89223874',           // 預設 GTM 標記
           gcs: 'G111',                       // Consent Mode 同意狀態
           gcd: '13r3r3I3I5l1',               // Consent Mode v2 規範字串
           cid: uniqueClientId,
           sid: '',                           // 前端在發送前動態帶入秒數 timestamp
-          sct: '1',
+          sct: '1',                          // Session Count (第一造訪為 1)
           seg: '1',                          // Session Engagement 狀態標記
+          _fv: '1',                          // 【關鍵修正】標記為 First Visit (新使用者)
           _ss: '1',                          // 標記 Session Start
           _s: '1',                           // 標記 Hit Sequence 1
           ul: 'zh-tw',                       // 使用者語系
@@ -366,7 +383,12 @@ app.post('/run-task', (req, res) => {
           _et: engagementTimeMs.toString(),  // Engagement Time (10~15秒)
           dl: target.url,
           dt: target.name,
-          en: 'page_view'
+          en: 'page_view',
+
+          // 【關鍵修正】顯式帶入 UTM 參數，確保 GA4 正式報表正確歸因
+          cs: utmSource,                     // Campaign Source
+          cm: utmMedium,                     // Campaign Medium
+          cn: utmCampaign                    // Campaign Name
         }
       };
     }).filter(Boolean);
