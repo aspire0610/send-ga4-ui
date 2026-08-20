@@ -45,19 +45,6 @@ const targetUrls = [
 
 const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
 
-// 常見真實裝置環境池 (確保解析度 sr、作業系統 uap 與系統版本 uapv 邏輯完全相符)
-const deviceProfiles = [
-  { sr: '390x844',  uap: 'iOS',     uapv: '17.4.1' },
-  { sr: '393x852',  uap: 'iOS',     uapv: '17.5.1' },
-  { sr: '414x896',  uap: 'iOS',     uapv: '16.7.2' },
-  { sr: '393x851',  uap: 'Android', uapv: '14.0.0' },
-  { sr: '360x800',  uap: 'Android', uapv: '13.0.0' },
-  { sr: '1920x1080', uap: 'Windows', uapv: '10.0.0' },
-  { sr: '1536x864',  uap: 'Windows', uapv: '11.0.0' },
-  { sr: '1710x1107', uap: 'macOS',   uapv: '14.5.0' },
-  { sr: '1440x900',  uap: 'macOS',   uapv: '15.0.0' }
-];
-
 app.get('/', (req, res) => {
   const checkboxesHtml = targetUrls.map((item, index) => `
     <div style="margin-bottom: 10px;">
@@ -264,8 +251,11 @@ app.get('/', (req, res) => {
 
                             var item = data.items[i];
 
-                            // 在發送當下即時更新 sid 為最新時間戳記（秒）
+                            // 在發送當下即時更新 sid 與真實螢幕解析度 sr
                             item.params.sid = Math.floor(Date.now() / 1000).toString();
+                            item.params.sr = (window.screen && window.screen.width && window.screen.height) 
+                              ? (window.screen.width + 'x' + window.screen.height) 
+                              : '1920x1080';
 
                             var queryParams = new URLSearchParams(item.params).toString();
                             var targetUrl = 'https://www.google-analytics.com/g/collect?' + queryParams;
@@ -277,7 +267,6 @@ app.get('/', (req, res) => {
                                 var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
                                   '↳ <b>[發送參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>gtm:</b> ' + item.params.gtm + '<br>' +
                                   '<span style="padding-left: 80px;"><b>gcs/gcd:</b> ' + item.params.gcs + ' / ' + item.params.gcd + ' | <b>ul/sr:</b> ' + item.params.ul + ' / ' + item.params.sr + '</span><br>' +
-                                  '<span style="padding-left: 80px;"><b>uap/uapv:</b> ' + item.params.uap + ' / ' + item.params.uapv + '</span><br>' +
                                   '<span style="padding-left: 80px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
                                   '<span style="padding-left: 80px;"><b>dl:</b> ' + item.params.dl + '</span>' +
                                 '</div>';
@@ -326,9 +315,6 @@ app.post('/run-task', (req, res) => {
       const target = targetUrls[targetIndex];
       if (!target) return null;
 
-      // 隨機抽選一套配對好的裝置環境指紋
-      const randomDevice = deviceProfiles[Math.floor(Math.random() * deviceProfiles.length)];
-
       const uniqueClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
       const engagementTimeMs = Math.floor(Math.random() * 5000) + 10000;
 
@@ -347,9 +333,6 @@ app.post('/run-task', (req, res) => {
           _ss: '1',                          // 標記 Session Start
           _s: '1',                           // 標記 Hit Sequence 1
           ul: 'zh-tw',                       // 使用者語系
-          sr: randomDevice.sr,               // 動態隨機螢幕解析度
-          uap: randomDevice.uap,             // 動態隨機平台標記
-          uapv: randomDevice.uapv,           // 動態隨機平台版本
           _p: Math.floor(Math.random() * 1000000000).toString(), // Page ID Hash
           _et: engagementTimeMs.toString(),  // Engagement Time (10~15秒)
           dl: target.url,
