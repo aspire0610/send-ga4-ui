@@ -89,7 +89,7 @@ app.get('/', (req, res) => {
     </head>
     <body>
         <div class="container">
-            <h1>📊 GA4 選擇性發送控制台 (前端直連版)</h1>
+            <h1>📊 GA4 選擇性發送控制台 (前端直連完整版)</h1>
             <p>請勾選要發送的目標連結：</p>
             
             <div class="actions">
@@ -262,8 +262,8 @@ app.get('/', (req, res) => {
                                 await fetch(targetUrl, { mode: 'no-cors' });
 
                                 var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
-                                  '↳ <b>[發送參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>sct:</b> ' + item.params.sct + '<br>' +
-                                  '<span style="padding-left: 80px;"><b>ua:</b> (使用目前造訪瀏覽器真實 UA)</span><br>' +
+                                  '↳ <b>[發送參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>gtm:</b> ' + item.params.gtm + '<br>' +
+                                  '<span style="padding-left: 80px;"><b>gcs/gcd:</b> ' + item.params.gcs + ' / ' + item.params.gcd + ' | <b>ul/sr:</b> ' + item.params.ul + ' / ' + item.params.sr + '</span><br>' +
                                   '<span style="padding-left: 80px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
                                   '<span style="padding-left: 80px;"><b>dl:</b> ' + item.params.dl + '</span>' +
                                 '</div>';
@@ -313,19 +313,25 @@ app.post('/run-task', (req, res) => {
       if (!target) return null;
 
       const uniqueClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
-      const engagementTimeMs = Math.floor(Math.random() * 3000) + 2000;
+      // 將停留時間調升至 10~15 秒（10000~15000ms），以利 GA4 判定為有效參與 (Engaged Session)
+      const engagementTimeMs = Math.floor(Math.random() * 5000) + 10000;
 
       return {
         name: target.name,
         params: {
           v: '2',
           tid: MEASUREMENT_ID,
+          gtm: '45je68e1v89223874',           // GTM 標記容器資訊
+          gcs: 'G111',                       // Consent Mode 同意狀態 (Granted)
+          gcd: '13r3r3I3I5l1',               // Consent Mode v2 規範字串
           cid: uniqueClientId,
-          sid: '', // 由前端在發送前動態補上即時 timestamp
+          sid: '',                           // 由前端在發送前動態補上即時 timestamp
           sct: '1',
-          seg: '1',
-          _p: Math.floor(Math.random() * 100000).toString(),
-          _et: engagementTimeMs.toString(),
+          seg: '1',                          // Session Engagement 狀態標記
+          ul: 'zh-tw',                       // 使用者語系
+          sr: '393x852',                     // 螢幕解析度
+          _p: Math.floor(Math.random() * 1000000000).toString(), // Page ID Hash
+          _et: engagementTimeMs.toString(),  // Engagement Time (ms)
           dl: target.url,
           dt: target.name,
           en: 'page_view'
