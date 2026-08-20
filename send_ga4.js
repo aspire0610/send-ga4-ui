@@ -319,23 +319,28 @@ app.post('/run-task', (req, res) => {
       return {
         name: target.name,
         params: {
-          v: '2',
-          tid: MEASUREMENT_ID,
-          gtm: '45je68e1v89223874',           // GTM 標記容器資訊
-          gcs: 'G111',                       // Consent Mode 同意狀態 (Granted)
-          gcd: '13r3r3I3I5l1',               // Consent Mode v2 規範字串
-          cid: uniqueClientId,
-          sid: '',                           // 由前端在發送前動態補上即時 timestamp
-          sct: '1',
-          seg: '1',                          // Session Engagement 狀態標記
-          ul: 'zh-tw',                       // 使用者語系
-          sr: '393x852',                     // 螢幕解析度
-          _p: Math.floor(Math.random() * 1000000000).toString(), // Page ID Hash
-          _et: engagementTimeMs.toString(),  // Engagement Time (ms)
-          dl: target.url,
-          dt: target.name,
-          en: 'page_view'
-        }
+  v: '2',
+  tid: MEASUREMENT_ID,
+  gtm: '45je68e1v89223874',
+  gcs: 'G111',
+  gcd: '13r3r3I3I5l1',
+  cid: uniqueClientId,
+  sid: '', 
+  sct: '1',
+  seg: '1',
+  _ss: '1',                  // 補上：標記 Session 開始
+  _s: '1',                   // 補上：標記第一個 Hit
+  ul: 'zh-tw',
+  sr: '1710x1107',           // 建議與截圖保持相同的常見桌機/行動解析度
+  uap: 'macOS',              // 補上：User Agent Client Hints
+  uapv: '15.0.0',            // 補上：系統版本
+  _p: Math.floor(Math.random() * 1000000000).toString(),
+  _et: engagementTimeMs.toString(),
+  dl: target.url,
+  dt: target.name,
+  en: 'page_view'
+}
+
       };
     }).filter(Boolean);
 
