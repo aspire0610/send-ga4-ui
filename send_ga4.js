@@ -3,6 +3,7 @@ const app = express();
 
 const PORT = process.env.PORT || 3000;
 
+// 解析 JSON Body
 app.use(express.json());
 
 const targetUrls = [
@@ -147,7 +148,6 @@ app.get('/', (req, res) => {
             var currentIpAddress = '未知 IP';
             var totalUrlCount = ${targetUrls.length};
 
-            // 取得當前 YYYY-MM-DD 字串
             function getTodayKey() {
                 var d = new Date();
                 var month = '' + (d.getMonth() + 1);
@@ -158,13 +158,11 @@ app.get('/', (req, res) => {
                 return [year, month, day].join('-');
             }
 
-            // 載入 localStorage 中的每日次數
             function loadDailyCounts() {
                 var today = getTodayKey();
                 var savedDate = localStorage.getItem('ga4_send_date');
                 var counts = {};
 
-                // 若日期改變則重置
                 if (savedDate !== today) {
                     localStorage.setItem('ga4_send_date', today);
                     localStorage.setItem('ga4_daily_counts', JSON.stringify({}));
@@ -175,7 +173,6 @@ app.get('/', (req, res) => {
                     }
                 }
 
-                // 更新 UI 上每一個選項的計數標籤
                 for (var i = 0; i < totalUrlCount; i++) {
                     var c = counts[i] || 0;
                     var badge = document.getElementById('count-badge-' + i);
@@ -183,7 +180,6 @@ app.get('/', (req, res) => {
                 }
             }
 
-            // 成功發送後增加 1 次並寫入 localStorage
             function incrementDailyCount(index) {
                 var today = getTodayKey();
                 var savedDate = localStorage.getItem('ga4_send_date');
@@ -205,7 +201,6 @@ app.get('/', (req, res) => {
                 if (badge) badge.innerText = '今日已送: ' + counts[index] + ' 次';
             }
 
-            // 手動清空計數
             function resetDailyCounts() {
                 if (confirm('確定要清空今天的發送次數紀錄嗎？')) {
                     localStorage.removeItem('ga4_daily_counts');
@@ -227,7 +222,6 @@ app.get('/', (req, res) => {
                 }
             }
 
-            // 初始化時載入 IP 及次數
             window.addEventListener('DOMContentLoaded', function() {
                 fetchCurrentIp();
                 loadDailyCounts();
@@ -332,12 +326,14 @@ app.get('/', (req, res) => {
                 var isAuto = document.getElementById('auto-repeat-chk').checked;
                 var runTag = isAuto ? ' [第 ' + currentRunCount + '/' + maxRuns + ' 輪]' : '';
                 
+                // 發送前更新並記錄 IP
                 await fetchCurrentIp();
 
                 updateStatus('⏳ ' + runTag + ' 數據發送中...', '#f59e0b');
                 logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + ']' + runTag + ' 開始發送選中的 ' + selectedIndexes.length + ' 筆資料... (當前來源 IP: ' + currentIpAddress + ')</span><br>';
 
                 try {
+                    // 1. 向後端索取組好的參數清單
                     var res = await fetch('/run-task', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -352,6 +348,7 @@ app.get('/', (req, res) => {
 
                             var item = data.items[i];
 
+                            // 在發送當下即時更新 sid (作為 Session 秒數時間戳記) 與真實螢幕解析度 sr
                             item.params.sid = Math.floor(Date.now() / 1000).toString();
                             item.params.sr = (window.screen && window.screen.width && window.screen.height) 
                               ? (window.screen.width + 'x' + window.screen.height) 
@@ -360,15 +357,19 @@ app.get('/', (req, res) => {
                             var queryParams = new URLSearchParams(item.params).toString();
                             var targetUrl = 'https://www.google-analytics.com/g/collect?' + queryParams;
 
+                            // 2. 由使用者瀏覽器發送給 GA4
                             try {
                                 await fetch(targetUrl, { mode: 'no-cors' });
 
-                                // 發送成功後，累加並更新該選項的今日計數
+                                // 發送成功後更新 UI 上的每日計數
                                 incrementDailyCount(selectedIndexes[i]);
 
                                 var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
                                   '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
-                                  '↳ <b>[發送參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + '<br>' +
+                                  '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>_fv:</b> ' + item.params._fv + '<br>' +
+                                  '<span style="padding-left: 80px;"><b>UTM 歸因:</b> source=' + (item.params.cs||'none') + ' | medium=' + (item.params.cm||'none') + ' | campaign=' + (item.params.cn||'none') + '</span><br>' +
+                                  '<span style="padding-left: 80px;"><b>Consent Mode:</b> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
+                                  '<span style="padding-left: 80px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
                                   '<span style="padding-left: 80px;"><b>dl:</b> ' + item.params.dl + '</span>' +
                                 '</div>';
 
@@ -379,8 +380,9 @@ app.get('/', (req, res) => {
 
                             logBox.scrollTop = logBox.scrollHeight;
 
+                            // 每次發送隨機間隔 5～10 秒（拉長發送間隔，避開 GA4 頻率過高的垃圾過濾）
                             if (i < data.items.length - 1) {
-                                var delayMs = Math.floor(Math.random() * 1000) + 2000;
+                                var delayMs = Math.floor(Math.random() * 5000) + 5000;
                                 await new Promise(function(resolve) { setTimeout(resolve, delayMs); });
                             }
                         }
@@ -415,29 +417,50 @@ app.post('/run-task', (req, res) => {
       const target = targetUrls[targetIndex];
       if (!target) return null;
 
+      // 1. 動態生成 CID
       const uniqueClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
       const engagementTimeMs = Math.floor(Math.random() * 5000) + 10000;
+
+      // 2. 從 target.url 自動解析 UTM 參數
+      let utmSource = '';
+      let utmMedium = '';
+      let utmCampaign = '';
+
+      try {
+        const parsedUrl = new URL(target.url);
+        utmSource = parsedUrl.searchParams.get('utm_source') || '';
+        utmMedium = parsedUrl.searchParams.get('utm_medium') || '';
+        utmCampaign = parsedUrl.searchParams.get('utm_campaign') || '';
+      } catch (e) {
+        // 若網址解析異常時的靜態備用處理
+      }
 
       return {
         name: target.name,
         params: {
           v: '2',
           tid: MEASUREMENT_ID,
-          gtm: '45je68e1v89223874',
-          gcs: 'G111',
-          gcd: '13r3r3I3I5l1',
+          gtm: '45je68e1v89223874',           // 預設 GTM 標記
+          gcs: 'G111',                       // Consent Mode 同意狀態
+          gcd: '13r3r3I3I5l1',               // Consent Mode v2 規範字串
           cid: uniqueClientId,
-          sid: '',
-          sct: '1',
-          seg: '1',
-          _ss: '1',
-          _s: '1',
-          ul: 'zh-tw',
-          _p: Math.floor(Math.random() * 1000000000).toString(),
-          _et: engagementTimeMs.toString(),
+          sid: '',                           // 前端在發送前動態帶入秒數 timestamp
+          sct: '1',                          // Session Count (第一造訪為 1)
+          seg: '1',                          // Session Engagement 狀態標記
+          _fv: '1',                          // 【關鍵修正】標記為 First Visit (新使用者)
+          _ss: '1',                          // 標記 Session Start
+          _s: '1',                           // 標記 Hit Sequence 1
+          ul: 'zh-tw',                       // 使用者語系
+          _p: Math.floor(Math.random() * 1000000000).toString(), // Page ID Hash
+          _et: engagementTimeMs.toString(),  // Engagement Time (10~15秒)
           dl: target.url,
           dt: target.name,
-          en: 'page_view'
+          en: 'page_view',
+
+          // 【關鍵修正】顯式帶入 UTM 參數，確保 GA4 正式報表正確歸因
+          cs: utmSource,                     // Campaign Source
+          cm: utmMedium,                     // Campaign Medium
+          cn: utmCampaign                    // Campaign Name
         }
       };
     }).filter(Boolean);
