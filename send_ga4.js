@@ -66,11 +66,11 @@ app.get('/', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Costco GA4 發送控制台</title>
+        <title>GA4 發送控制台</title>
         <style>
             * { box-sizing: border-box; }
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 10px; margin: 0; }
-            .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
+            .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 12px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
             @media (min-width: 768px) { body { padding: 20px; } .container { padding: 25px; } }
             h1 { font-size: 20px; margin-bottom: 5px; color: #38bdf8; }
             p { color: #94a3b8; margin-bottom: 15px; font-size: 13px; }
@@ -96,7 +96,7 @@ app.get('/', (req, res) => {
     </head>
     <body>
         <div class="container">
-            <h1>📊 GA4 選擇性發送控制台 (前端直連完整版)</h1>
+            <h1>📡GA4 選擇性發送控制台 (前端直連)</h1>
             <p>請勾選要發送的目標連結：</p>
             
             <div class="actions">
@@ -120,8 +120,8 @@ app.get('/', (req, res) => {
                     啟用自動重複發送
                 </label>
                 <label>
-                    間隔 (秒): 
-                    <input type="number" id="interval-sec" value="60" min="10">
+                    間隔 (秒)最低20秒: 
+                    <input type="number" id="interval-sec" value="60" min="200">
                 </label>
                 <label>
                     重複次數: 
