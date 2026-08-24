@@ -47,13 +47,13 @@ const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
 
 app.get('/', (req, res) => {
   const checkboxesHtml = targetUrls.map((item, index) => `
-    <div style="margin-bottom: 10px;">
-      <label style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; color: #cbd5e1; font-size: 13px; padding: 4px 0;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <input type="checkbox" name="urlIndex" value="${index}" checked style="width: 20px; height: 20px; accent-color: #38bdf8;">
-          <span><b>${index + 1}.</b> ${item.name}</span>
+    <div class="item-row">
+      <label class="item-label">
+        <div class="item-left">
+          <input type="checkbox" name="urlIndex" value="${index}" checked class="custom-checkbox">
+          <span class="item-title"><b>${index + 1}.</b> ${item.name}</span>
         </div>
-        <span id="count-badge-${index}" style="background: #334155; color: #38bdf8; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 12px;">
+        <span id="count-badge-${index}" class="badge">
           已發送: 0 次
         </span>
       </label>
@@ -69,40 +69,189 @@ app.get('/', (req, res) => {
         <title>GA4 發送控制台</title>
         <style>
             * { box-sizing: border-box; }
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #000000; color: #f8fafc; padding: 10px; margin: 0; }
-            .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 12px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-            @media (min-width: 768px) { body { padding: 20px; } .container { padding: 25px; } }
-            h1 { font-size: 20px; margin-bottom: 5px; color: #38bdf8; }
+            body { 
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro Display", sans-serif; 
+                background: radial-gradient(circle at top left, #0f172a, #020617);
+                color: #f8fafc; 
+                padding: 12px; 
+                margin: 0; 
+                min-height: 100vh;
+            }
+            .container { 
+                max-width: 900px; 
+                margin: 0 auto; 
+                background: rgba(30, 41, 59, 0.65); 
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                padding: 16px; 
+                border-radius: 16px; 
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); 
+            }
+            @media (min-width: 768px) { body { padding: 24px; } .container { padding: 28px; } }
+            
+            .header-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+                margin-bottom: 12px;
+            }
+            h1 { font-size: 20px; margin: 0; color: #38bdf8; font-weight: 700; letter-spacing: -0.5px; }
+            .date-badge {
+                background: rgba(56, 189, 248, 0.1);
+                border: 1px solid rgba(56, 189, 248, 0.25);
+                color: #38bdf8;
+                font-size: 12px;
+                padding: 4px 10px;
+                border-radius: 20px;
+                font-weight: 600;
+                white-space: nowrap;
+            }
             p { color: #94a3b8; margin-bottom: 15px; font-size: 13px; }
-            .actions { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-            button { background: #0284c7; color: white; border: none; padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
-            button:hover { background: #0369a1; }
-            button:disabled { background: #475569; cursor: not-allowed; }
-            .btn-secondary { background: #334155; font-size: 14px; padding: 10px 16px; width: auto; }
-            .btn-danger { background: #991b1b; font-size: 12px; padding: 6px 12px; border-radius: 6px; }
-            .btn-stop { background: #dc2626; }
-            .grid-box { display: grid; grid-template-columns: 1fr; gap: 5px; max-height: 320px; overflow-y: auto; background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 15px; }
-            @media (min-width: 768px) { .grid-box { grid-template-columns: 1fr 1fr; gap: 10px; max-height: 280px; padding: 15px; } }
-            .auto-panel { background: #0f172a; border: 1px solid #334155; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-            .auto-panel label { color: #cbd5e1; font-size: 14px; display: flex; align-items: center; gap: 6px; }
-            .auto-panel input[type="number"] { background: #1e293b; border: 1px solid #475569; color: white; padding: 6px 10px; border-radius: 6px; width: 80px; font-size: 14px; }
-            .ip-box { background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; padding: 6px 12px; border-radius: 6px; font-weight: auto; font-size: 14px; display: flex; align-items: center; gap: 8px; }
-            #log-box { background: #090d16; border: 1px solid #334155; border-radius: 8px; padding: 15px; height: 280px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #34d399; line-height: 1.5; }
+            
+            .actions { margin-bottom: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+            
+            button { 
+                background: linear-gradient(135deg, #0284c7, #0369a1); 
+                color: white; 
+                border: 1px solid rgba(255,255,255,0.15); 
+                padding: 10px 18px; 
+                font-size: 14px; 
+                font-weight: 600; 
+                border-radius: 10px; 
+                cursor: pointer; 
+                transition: all 0.2s ease;
+                box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+            }
+            button:active { transform: scale(0.98); }
+            button:hover { background: linear-gradient(135deg, #0369a1, #075985); }
+            button:disabled { background: #334155; border-color: transparent; opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+            
+            .btn-secondary { background: rgba(51, 65, 85, 0.8); color: #e2e8f0; font-size: 13px; padding: 8px 14px; width: auto; box-shadow: none; }
+            .btn-secondary:hover { background: rgba(71, 85, 105, 0.9); }
+            .btn-danger { background: rgba(153, 27, 27, 0.8); color: #fca5a5; font-size: 12px; padding: 8px 12px; border-radius: 8px; box-shadow: none; }
+            .btn-danger:hover { background: rgba(185, 28, 28, 0.9); }
+            .btn-stop { background: linear-gradient(135deg, #dc2626, #991b1b); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); }
+            
+            .total-count-badge {
+                background: rgba(16, 185, 129, 0.15);
+                border: 1px solid rgba(16, 185, 129, 0.3);
+                color: #34d399;
+                font-size: 12px;
+                padding: 6px 12px;
+                border-radius: 8px;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+
+            .grid-box { 
+                display: grid; 
+                grid-template-columns: 1fr; 
+                gap: 6px; 
+                max-height: 340px; 
+                overflow-y: auto; 
+                background: rgba(15, 23, 42, 0.6); 
+                padding: 10px; 
+                border-radius: 12px; 
+                border: 1px solid rgba(255, 255, 255, 0.08); 
+                margin-bottom: 15px; 
+            }
+            @media (min-width: 768px) { .grid-box { grid-template-columns: 1fr 1fr; gap: 8px; max-height: 300px; padding: 14px; } }
+            
+            .item-row { margin-bottom: 0; }
+            .item-label { 
+                cursor: pointer; 
+                display: flex; 
+                align-items: center; 
+                justify-content: space-between; 
+                color: #cbd5e1; 
+                font-size: 13px; 
+                padding: 6px 8px; 
+                border-radius: 8px;
+                transition: background 0.15s ease;
+            }
+            .item-label:hover { background: rgba(255, 255, 255, 0.04); }
+            .item-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; padding-right: 8px; }
+            .custom-checkbox { width: 18px; height: 18px; accent-color: #38bdf8; flex-shrink: 0; cursor: pointer; }
+            .item-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .badge { 
+                background: rgba(51, 65, 85, 0.8); 
+                color: #38bdf8; 
+                font-size: 11px; 
+                font-weight: 600; 
+                padding: 3px 8px; 
+                border-radius: 12px; 
+                white-space: nowrap; 
+                flex-shrink: 0; 
+            }
+
+            .auto-panel { 
+                background: rgba(15, 23, 42, 0.6); 
+                border: 1px solid rgba(255, 255, 255, 0.08); 
+                padding: 12px; 
+                border-radius: 12px; 
+                margin-bottom: 15px; 
+                display: flex; 
+                align-items: center; 
+                gap: 12px; 
+                flex-wrap: wrap; 
+            }
+            .auto-panel label { color: #cbd5e1; font-size: 13px; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+            .auto-panel input[type="number"] { 
+                background: rgba(30, 41, 59, 0.8); 
+                border: 1px solid rgba(255, 255, 255, 0.15); 
+                color: white; 
+                padding: 6px 10px; 
+                border-radius: 6px; 
+                width: 70px; 
+                font-size: 13px; 
+                outline: none;
+            }
+            .ip-box { 
+                width: 100%; 
+                background: rgba(30, 41, 59, 0.7); 
+                border: 1px solid rgba(56, 189, 248, 0.3); 
+                color: #38bdf8; 
+                padding: 8px 12px; 
+                border-radius: 8px; 
+                font-size: 13px; 
+                display: flex; 
+                align-items: center; 
+                justify-content: space-between;
+                box-sizing: border-box;
+            }
+            
+            #log-box { 
+                background: rgba(9, 13, 22, 0.85); 
+                border: 1px solid rgba(255, 255, 255, 0.08); 
+                border-radius: 10px; 
+                padding: 12px; 
+                height: 260px; 
+                overflow-y: auto; 
+                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; 
+                font-size: 11px; 
+                color: #34d399; 
+                line-height: 1.6; 
+            }
             .log-err { color: #f87171; }
             .log-info { color: #60a5fa; }
             .log-warn { color: #fbbf24; }
-            #status-text { font-weight: bold; color: #38bdf8; width: 100%; margin-top: 5px; font-size: 15px; }
+            #status-text { font-weight: 600; color: #38bdf8; width: 100%; margin-top: 4px; font-size: 14px; }
         </style>
     </head>
     <body>
         <div class="container">
-            <h1>📡GA4 選擇性發送控制台 (前端直連)</h1>
+            <div class="header-bar">
+                <h1>📡 GA4 選擇性發送控制台 (前端直連)</h1>
+                <div class="date-badge" id="current-date">--</div>
+            </div>
             <p>請勾選要發送的目標連結：</p>
             
             <div class="actions">
                 <button type="button" class="btn-secondary" onclick="toggleAll(true)">全選</button>
                 <button type="button" class="btn-secondary" onclick="toggleAll(false)">全不選</button>
                 <button type="button" class="btn-danger" onclick="resetDailyCounts()">重置今日計數</button>
+                <div class="total-count-badge" id="daily-total-badge">當日已發送總次數: 0 次</div>
             </div>
 
             <div class="grid-box">
@@ -111,17 +260,19 @@ app.get('/', (req, res) => {
 
             <div class="auto-panel">
                 <div class="ip-box">
-                    <span>🌐 當前裝置 IP:</span>
-                    <span id="current-ip">抓取中...</span>
-                    <button type="button" class="btn-secondary" style="padding: 2px 8px; font-size: 11px;" onclick="fetchCurrentIp()">重新整理</button>
+                    <div>
+                        <span>🌐 當前裝置 IP: </span>
+                        <span id="current-ip" style="font-weight: 700;">抓取中...</span>
+                    </div>
+                    <button type="button" class="btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="fetchCurrentIp()">重新整理</button>
                 </div>
                 <label>
-                    <input type="checkbox" id="auto-repeat-chk" style="width: 16px; height: 16px;">
+                    <input type="checkbox" id="auto-repeat-chk" class="custom-checkbox">
                     啟用自動重複發送
                 </label>
                 <label>
-                    間隔 (秒)最低20秒: 
-                    <input type="number" id="interval-sec" value="20" min="200">
+                    間隔 (秒): 
+                    <input type="number" id="interval-sec" value="20" min="20">
                 </label>
                 <label>
                     重複次數: 
@@ -131,11 +282,11 @@ app.get('/', (req, res) => {
             </div>
 
             <div style="display: flex; gap: 10px;">
-                <button type="button" id="start-btn" onclick="handleStart()">單次發送 / 啟動自動重複</button>
-                <button type="button" id="stop-btn" class="btn-stop" style="display: none;" onclick="stopAutoLoop()">停止自動發送</button>
+                <button type="button" id="start-btn" style="width: 100%;" onclick="handleStart()">單次發送 / 啟動自動重複</button>
+                <button type="button" id="stop-btn" class="btn-stop" style="display: none; width: 100%;" onclick="stopAutoLoop()">停止自動發送</button>
             </div>
             
-            <h3 style="font-size: 14px; margin: 15px 0 8px 0; color: #cbd5e1;">即時執行日誌 (包含傳送參數)：</h3>
+            <h3 style="font-size: 13px; margin: 16px 0 8px 0; color: #94a3b8; font-weight: 600;">即時執行日誌 (包含傳送參數)：</h3>
             <div id="log-box">等待開始執行...</div>
         </div>
 
@@ -158,6 +309,13 @@ app.get('/', (req, res) => {
                 return [year, month, day].join('-');
             }
 
+            function updateDateDisplay() {
+                var dateEl = document.getElementById('current-date');
+                if (dateEl) {
+                    dateEl.innerText = getTodayKey();
+                }
+            }
+
             function loadDailyCounts() {
                 var today = getTodayKey();
                 var savedDate = localStorage.getItem('ga4_send_date');
@@ -173,11 +331,16 @@ app.get('/', (req, res) => {
                     }
                 }
 
+                var grandTotal = 0;
                 for (var i = 0; i < totalUrlCount; i++) {
                     var c = counts[i] || 0;
+                    grandTotal += c;
                     var badge = document.getElementById('count-badge-' + i);
                     if (badge) badge.innerText = '已發送: ' + c + ' 次';
                 }
+
+                var totalBadge = document.getElementById('daily-total-badge');
+                if (totalBadge) totalBadge.innerText = '當日已發送總次數: ' + grandTotal + ' 次';
             }
 
             function incrementDailyCount(index) {
@@ -199,6 +362,11 @@ app.get('/', (req, res) => {
 
                 var badge = document.getElementById('count-badge-' + index);
                 if (badge) badge.innerText = '已發送: ' + counts[index] + ' 次';
+
+                var grandTotal = 0;
+                Object.keys(counts).forEach(function(k) { grandTotal += counts[k]; });
+                var totalBadge = document.getElementById('daily-total-badge');
+                if (totalBadge) totalBadge.innerText = '當日已發送總次數: ' + grandTotal + ' 次';
             }
 
             function resetDailyCounts() {
@@ -223,6 +391,7 @@ app.get('/', (req, res) => {
             }
 
             window.addEventListener('DOMContentLoaded', function() {
+                updateDateDisplay();
                 fetchCurrentIp();
                 loadDailyCounts();
             });
@@ -367,10 +536,10 @@ app.get('/', (req, res) => {
                                 var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
                                   '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
                                   '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>_fv:</b> ' + item.params._fv + '<br>' +
-                                  '<span style="padding-left: 80px;"><b>UTM 歸因:</b> source=' + (item.params.cs||'none') + ' | medium=' + (item.params.cm||'none') + ' | campaign=' + (item.params.cn||'none') + '</span><br>' +
-                                  '<span style="padding-left: 80px;"><b>Consent Mode:</b> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
-                                  '<span style="padding-left: 80px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
-                                  '<span style="padding-left: 80px;"><b>dl:</b> ' + item.params.dl + '</span>' +
+                                  '<span style="padding-left: 20px;"><b>UTM 歸因:</b> source=' + (item.params.cs||'none') + ' | medium=' + (item.params.cm||'none') + ' | campaign=' + (item.params.cn||'none') + '</span><br>' +
+                                  '<span style="padding-left: 20px;"><b>Consent Mode:</b> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
+                                  '<span style="padding-left: 20px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
+                                  '<span style="padding-left: 20px;"><b>dl:</b> ' + item.params.dl + '</span>' +
                                 '</div>';
 
                                 logBox.innerHTML += '<span style="color: #34d399;">[成功] (' + (i + 1) + '/' + data.items.length + ') ' + item.name + ' 已送達</span><br>' + paramLogHtml;
