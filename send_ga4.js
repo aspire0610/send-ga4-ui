@@ -53,7 +53,7 @@ app.get('/', (req, res) => {
           <input type="checkbox" name="urlIndex" value="${index}" checked style="width: 20px; height: 20px; accent-color: #38bdf8;">
           <span><b>${index + 1}.</b> ${item.name}</span>
         </div>
-        <span id="count-badge-${index}" style="background: #334155; color: #38bdf8; font-size: 12px; font-weight: bold; padding: 2px 8px; border-radius: 12px;">
+        <span id="count-badge-${index}" style="background: #334155; color: #38bdf8; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 12px;">
           今日已送: 0 次
         </span>
       </label>
@@ -75,7 +75,7 @@ app.get('/', (req, res) => {
             h1 { font-size: 20px; margin-bottom: 5px; color: #38bdf8; }
             p { color: #94a3b8; margin-bottom: 15px; font-size: 13px; }
             .actions { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-            button { background: #0284c7; color: white; border: none; padding: 12px 20px; font-size: 16px; font-weight: auto; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+            button { background: #0284c7; color: white; border: none; padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
             button:hover { background: #0369a1; }
             button:disabled { background: #475569; cursor: not-allowed; }
             .btn-secondary { background: #334155; font-size: 14px; padding: 10px 16px; width: auto; }
@@ -86,7 +86,7 @@ app.get('/', (req, res) => {
             .auto-panel { background: #0f172a; border: 1px solid #334155; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
             .auto-panel label { color: #cbd5e1; font-size: 14px; display: flex; align-items: center; gap: 6px; }
             .auto-panel input[type="number"] { background: #1e293b; border: 1px solid #475569; color: white; padding: 6px 10px; border-radius: 6px; width: 80px; font-size: 14px; }
-            .ip-box { background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+            .ip-box { background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; padding: 6px 12px; border-radius: 6px; font-weight: auto; font-size: 14px; display: flex; align-items: center; gap: 8px; }
             #log-box { background: #090d16; border: 1px solid #334155; border-radius: 8px; padding: 15px; height: 280px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #34d399; line-height: 1.5; }
             .log-err { color: #f87171; }
             .log-info { color: #60a5fa; }
