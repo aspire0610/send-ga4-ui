@@ -121,7 +121,7 @@ app.get('/', (req, res) => {
                 </label>
                 <label>
                     間隔 (秒)最低20秒: 
-                    <input type="number" id="interval-sec" value="60" min="200">
+                    <input type="number" id="interval-sec" value="20" min="200">
                 </label>
                 <label>
                     重複次數: 
