@@ -198,7 +198,7 @@ app.get('/', (req, res) => {
                 localStorage.setItem('ga4_daily_counts', JSON.stringify(counts));
 
                 var badge = document.getElementById('count-badge-' + index);
-                if (badge) badge.innerText = '今日已送: ' + counts[index] + ' 次';
+                if (badge) badge.innerText = '已發送: ' + counts[index] + ' 次';
             }
 
             function resetDailyCounts() {
