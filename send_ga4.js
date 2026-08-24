@@ -69,7 +69,7 @@ app.get('/', (req, res) => {
         <title>GA4 發送控制台</title>
         <style>
             * { box-sizing: border-box; }
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 10px; margin: 0; }
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #778899; color: #f8fafc; padding: 10px; margin: 0; }
             .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 12px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
             @media (min-width: 768px) { body { padding: 20px; } .container { padding: 25px; } }
             h1 { font-size: 20px; margin-bottom: 5px; color: #38bdf8; }
