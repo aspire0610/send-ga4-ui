@@ -75,7 +75,7 @@ app.get('/', (req, res) => {
             h1 { font-size: 20px; margin-bottom: 5px; color: #38bdf8; }
             p { color: #94a3b8; margin-bottom: 15px; font-size: 13px; }
             .actions { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-            button { background: #0284c7; color: white; border: none; padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+            button { background: #0284c7; color: white; border: none; padding: 12px 20px; font-size: 16px; font-weight: auto; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
             button:hover { background: #0369a1; }
             button:disabled { background: #475569; cursor: not-allowed; }
             .btn-secondary { background: #334155; font-size: 14px; padding: 10px 16px; width: auto; }
