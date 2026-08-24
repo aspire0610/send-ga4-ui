@@ -54,7 +54,7 @@ app.get('/', (req, res) => {
           <span><b>${index + 1}.</b> ${item.name}</span>
         </div>
         <span id="count-badge-${index}" style="background: #334155; color: #38bdf8; font-size: 10px; font-weight: bold; padding: 2px 8px; border-radius: 12px;">
-          今日已送: 0 次
+          已發送: 0 次
         </span>
       </label>
     </div>
