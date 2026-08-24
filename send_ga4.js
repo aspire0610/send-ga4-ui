@@ -176,7 +176,7 @@ app.get('/', (req, res) => {
                 for (var i = 0; i < totalUrlCount; i++) {
                     var c = counts[i] || 0;
                     var badge = document.getElementById('count-badge-' + i);
-                    if (badge) badge.innerText = '今日已送: ' + c + ' 次';
+                    if (badge) badge.innerText = '已發送: ' + c + ' 次';
                 }
             }
 
