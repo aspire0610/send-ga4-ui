@@ -47,15 +47,17 @@ const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
 
 app.get('/', (req, res) => {
   const checkboxesHtml = targetUrls.map((item, index) => `
-    <div class="item-row">
+    <div class="item-card">
       <label class="item-label">
-        <div class="item-left">
+        <div class="item-top">
           <input type="checkbox" name="urlIndex" value="${index}" checked class="custom-checkbox">
           <span class="item-title"><b>${index + 1}.</b> ${item.name}</span>
         </div>
-        <span id="count-badge-${index}" class="badge">
-          已發送: 0 次
-        </span>
+        <div class="item-bottom">
+          <span id="count-badge-${index}" class="badge">
+            已發送: 0 次
+          </span>
+        </div>
       </label>
     </div>
   `).join('');
@@ -147,8 +149,8 @@ app.get('/', (req, res) => {
             .grid-box { 
                 display: grid; 
                 grid-template-columns: 1fr; 
-                gap: 6px; 
-                max-height: 340px; 
+                gap: 8px; 
+                max-height: 360px; 
                 overflow-y: auto; 
                 background: rgba(15, 23, 42, 0.6); 
                 padding: 10px; 
@@ -156,33 +158,48 @@ app.get('/', (req, res) => {
                 border: 1px solid rgba(255, 255, 255, 0.08); 
                 margin-bottom: 15px; 
             }
-            @media (min-width: 768px) { .grid-box { grid-template-columns: 1fr 1fr; gap: 8px; max-height: 300px; padding: 14px; } }
+            @media (min-width: 768px) { .grid-box { grid-template-columns: 1fr 1fr; gap: 10px; max-height: 320px; padding: 14px; } }
             
-            .item-row { margin-bottom: 0; }
+            /* 新增卡片樣式與換行架構 */
+            .item-card { 
+                background: rgba(30, 41, 59, 0.4);
+                border: 1px solid rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+                padding: 8px 12px;
+                transition: background 0.15s ease;
+            }
+            .item-card:hover { background: rgba(255, 255, 255, 0.05); }
             .item-label { 
                 cursor: pointer; 
                 display: flex; 
-                align-items: center; 
-                justify-content: space-between; 
-                color: #cbd5e1; 
-                font-size: 13px; 
-                padding: 6px 8px; 
-                border-radius: 8px;
-                transition: background 0.15s ease;
+                flex-direction: column;
+                gap: 6px;
             }
-            .item-label:hover { background: rgba(255, 255, 255, 0.04); }
-            .item-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; padding-right: 8px; }
-            .custom-checkbox { width: 18px; height: 18px; accent-color: #38bdf8; flex-shrink: 0; cursor: pointer; }
-            .item-title { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .item-top {
+                display: flex;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            .custom-checkbox { width: 18px; height: 18px; accent-color: #38bdf8; flex-shrink: 0; margin-top: 2px; cursor: pointer; }
+            .item-title { 
+                color: #f1f5f9; 
+                font-size: 13px; 
+                line-height: 1.4; 
+                word-break: break-word; 
+            }
+            .item-bottom {
+                display: flex;
+                justify-content: flex-end;
+            }
             .badge { 
-                background: rgba(51, 65, 85, 0.8); 
+                background: rgba(15, 23, 42, 0.8); 
                 color: #38bdf8; 
+                border: 1px solid rgba(56, 189, 248, 0.2);
                 font-size: 11px; 
                 font-weight: 600; 
-                padding: 3px 8px; 
-                border-radius: 12px; 
+                padding: 2px 8px; 
+                border-radius: 10px; 
                 white-space: nowrap; 
-                flex-shrink: 0; 
             }
 
             .auto-panel { 
