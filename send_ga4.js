@@ -48,7 +48,7 @@ const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
 app.get('/', (req, res) => {
   const checkboxesHtml = targetUrls.map((item, index) => `
     <div style="margin-bottom: 10px;">
-      <label style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; color: #cbd5e1; font-size: 15px; padding: 4px 0;">
+      <label style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; color: #cbd5e1; font-size: 13px; padding: 4px 0;">
         <div style="display: flex; align-items: center; gap: 12px;">
           <input type="checkbox" name="urlIndex" value="${index}" checked style="width: 20px; height: 20px; accent-color: #38bdf8;">
           <span><b>${index + 1}.</b> ${item.name}</span>
