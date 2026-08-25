@@ -377,7 +377,7 @@ app.get('/', (req, res) => {
                         }
 
                         var totalBadge = document.getElementById('daily-total-badge');
-                        if (totalBadge) totalBadge.innerText = '當日已發送總次數: ' + grandTotal + ' 次';
+                        if (totalBadge) totalBadge.innerText = '［全域］當日已發送總次數: ' + grandTotal + ' 次';
                     }
                 } catch(e) {}
             }
