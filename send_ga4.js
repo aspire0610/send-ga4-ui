@@ -6,6 +6,48 @@ const PORT = process.env.PORT || 3000;
 // 解析 JSON Body
 app.use(express.json());
 
+// ==========================================
+// 全域記憶體計數器邏輯 (跨設備同步)
+// ==========================================
+function getTaiwanDate() {
+  return new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' });
+}
+
+let dailyCounts = {}; 
+let lastRecordDate = getTaiwanDate();
+
+function checkAndResetDaily() {
+  const today = getTaiwanDate();
+  if (lastRecordDate !== today) {
+    dailyCounts = {};
+    lastRecordDate = today;
+  }
+}
+
+// 讀取全域計數 API
+app.get('/api/daily-counts', (req, res) => {
+  checkAndResetDaily();
+  res.json({ success: true, date: lastRecordDate, counts: dailyCounts });
+});
+
+// 發送成功後更新單項計數 API
+app.post('/api/increment-count', (req, res) => {
+  checkAndResetDaily();
+  const { index } = req.body;
+  if (typeof index === 'number' && index >= 0) {
+    dailyCounts[index] = (dailyCounts[index] || 0) + 1;
+  }
+  res.json({ success: true, counts: dailyCounts });
+});
+
+// 重置全域計數 API
+app.post('/api/reset-counts', (req, res) => {
+  checkAndResetDaily();
+  dailyCounts = {};
+  res.json({ success: true, counts: dailyCounts });
+});
+// ==========================================
+
 const targetUrls = [
   { name: '花櫃', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Flowers-Plant/c/121307?utm_source=warehouse&utm_medium=W5009&utm_campaign=posm-flowers' },
   { name: '珠寶櫃', url: 'https://www.costco.com.tw/Jewelry-Gold/Jewelry-Buying-guide/Jewelry-Gold/c/CL10?utm_source=warehouse&utm_medium=W5009&utm_campaign=posm-jewelry' },
@@ -160,7 +202,6 @@ app.get('/', (req, res) => {
             }
             @media (min-width: 768px) { .grid-box { grid-template-columns: 1fr 1fr; gap: 10px; max-height: 320px; padding: 14px; } }
             
-            /* 新增卡片樣式與換行架構 */
             .item-card { 
                 background: rgba(30, 41, 59, 0.4);
                 border: 1px solid rgba(255, 255, 255, 0.05);
@@ -316,80 +357,50 @@ app.get('/', (req, res) => {
             var currentIpAddress = '未知 IP';
             var totalUrlCount = ${targetUrls.length};
 
-            function getTodayKey() {
-                var d = new Date();
-                var month = '' + (d.getMonth() + 1);
-                var day = '' + d.getDate();
-                var year = d.getFullYear();
-                if (month.length < 2) month = '0' + month;
-                if (day.length < 2) day = '0' + day;
-                return [year, month, day].join('-');
-            }
+            // 全域異步載入計數
+            async function loadDailyCounts() {
+                try {
+                    var res = await fetch('/api/daily-counts');
+                    var data = await res.json();
+                    if (data.success) {
+                        var dateEl = document.getElementById('current-date');
+                        if (dateEl) dateEl.innerText = data.date;
 
-            function updateDateDisplay() {
-                var dateEl = document.getElementById('current-date');
-                if (dateEl) {
-                    dateEl.innerText = getTodayKey();
-                }
-            }
+                        var counts = data.counts || {};
+                        var grandTotal = 0;
 
-            function loadDailyCounts() {
-                var today = getTodayKey();
-                var savedDate = localStorage.getItem('ga4_send_date');
-                var counts = {};
+                        for (var i = 0; i < totalUrlCount; i++) {
+                            var c = counts[i] || 0;
+                            grandTotal += c;
+                            var badge = document.getElementById('count-badge-' + i);
+                            if (badge) badge.innerText = '已發送: ' + c + ' 次';
+                        }
 
-                if (savedDate !== today) {
-                    localStorage.setItem('ga4_send_date', today);
-                    localStorage.setItem('ga4_daily_counts', JSON.stringify({}));
-                } else {
-                    var savedCounts = localStorage.getItem('ga4_daily_counts');
-                    if (savedCounts) {
-                        try { counts = JSON.parse(savedCounts); } catch(e) {}
+                        var totalBadge = document.getElementById('daily-total-badge');
+                        if (totalBadge) totalBadge.innerText = '當日已發送總次數: ' + grandTotal + ' 次';
                     }
-                }
-
-                var grandTotal = 0;
-                for (var i = 0; i < totalUrlCount; i++) {
-                    var c = counts[i] || 0;
-                    grandTotal += c;
-                    var badge = document.getElementById('count-badge-' + i);
-                    if (badge) badge.innerText = '已發送: ' + c + ' 次';
-                }
-
-                var totalBadge = document.getElementById('daily-total-badge');
-                if (totalBadge) totalBadge.innerText = '當日已發送總次數: ' + grandTotal + ' 次';
+                } catch(e) {}
             }
 
-            function incrementDailyCount(index) {
-                var today = getTodayKey();
-                var savedDate = localStorage.getItem('ga4_send_date');
-                var counts = {};
-
-                if (savedDate === today) {
-                    var savedCounts = localStorage.getItem('ga4_daily_counts');
-                    if (savedCounts) {
-                        try { counts = JSON.parse(savedCounts); } catch(e) {}
-                    }
-                } else {
-                    localStorage.setItem('ga4_send_date', today);
-                }
-
-                counts[index] = (counts[index] || 0) + 1;
-                localStorage.setItem('ga4_daily_counts', JSON.stringify(counts));
-
-                var badge = document.getElementById('count-badge-' + index);
-                if (badge) badge.innerText = '已發送: ' + counts[index] + ' 次';
-
-                var grandTotal = 0;
-                Object.keys(counts).forEach(function(k) { grandTotal += counts[k]; });
-                var totalBadge = document.getElementById('daily-total-badge');
-                if (totalBadge) totalBadge.innerText = '當日已發送總次數: ' + grandTotal + ' 次';
-            }
-
-            function resetDailyCounts() {
-                if (confirm('確定要清空今天的發送次數紀錄嗎？')) {
-                    localStorage.removeItem('ga4_daily_counts');
+            // 全域異步更新發送成功數
+            async function incrementDailyCount(index) {
+                try {
+                    await fetch('/api/increment-count', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ index: index })
+                    });
                     loadDailyCounts();
+                } catch(e) {}
+            }
+
+            // 全域重置計數
+            async function resetDailyCounts() {
+                if (confirm('確定要清空今天的【全域】發送次數紀錄嗎？（所有設備都會歸零）')) {
+                    try {
+                        await fetch('/api/reset-counts', { method: 'POST' });
+                        loadDailyCounts();
+                    } catch(e) {}
                 }
             }
 
@@ -408,9 +419,11 @@ app.get('/', (req, res) => {
             }
 
             window.addEventListener('DOMContentLoaded', function() {
-                updateDateDisplay();
                 fetchCurrentIp();
                 loadDailyCounts();
+                
+                // 每 10 秒自動輪巡全域發送次數，確保各裝置畫面同步
+                setInterval(loadDailyCounts, 10000);
             });
 
             function toggleAll(status) {
@@ -512,14 +525,12 @@ app.get('/', (req, res) => {
                 var isAuto = document.getElementById('auto-repeat-chk').checked;
                 var runTag = isAuto ? ' [第 ' + currentRunCount + '/' + maxRuns + ' 輪]' : '';
                 
-                // 發送前更新並記錄 IP
                 await fetchCurrentIp();
 
                 updateStatus('⏳ ' + runTag + ' 數據發送中...', '#f59e0b');
                 logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + ']' + runTag + ' 開始發送選中的 ' + selectedIndexes.length + ' 筆資料... (當前來源 IP: ' + currentIpAddress + ')</span><br>';
 
                 try {
-                    // 1. 向後端索取組好的參數清單
                     var res = await fetch('/run-task', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -534,7 +545,6 @@ app.get('/', (req, res) => {
 
                             var item = data.items[i];
 
-                            // 在發送當下即時更新 sid (作為 Session 秒數時間戳記) 與真實螢幕解析度 sr
                             item.params.sid = Math.floor(Date.now() / 1000).toString();
                             item.params.sr = (window.screen && window.screen.width && window.screen.height) 
                               ? (window.screen.width + 'x' + window.screen.height) 
@@ -543,12 +553,11 @@ app.get('/', (req, res) => {
                             var queryParams = new URLSearchParams(item.params).toString();
                             var targetUrl = 'https://www.google-analytics.com/g/collect?' + queryParams;
 
-                            // 2. 由使用者瀏覽器發送給 GA4
                             try {
                                 await fetch(targetUrl, { mode: 'no-cors' });
 
-                                // 發送成功後更新 UI 上的每日計數
-                                incrementDailyCount(selectedIndexes[i]);
+                                // 發送成功後同步更新全域計數
+                                await incrementDailyCount(selectedIndexes[i]);
 
                                 var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
                                   '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
@@ -566,7 +575,6 @@ app.get('/', (req, res) => {
 
                             logBox.scrollTop = logBox.scrollHeight;
 
-                            // 每次發送隨機間隔 5～10 秒（拉長發送間隔，避開 GA4 頻率過高的垃圾過濾）
                             if (i < data.items.length - 1) {
                                 var delayMs = Math.floor(Math.random() * 5000) + 5000;
                                 await new Promise(function(resolve) { setTimeout(resolve, delayMs); });
@@ -603,11 +611,9 @@ app.post('/run-task', (req, res) => {
       const target = targetUrls[targetIndex];
       if (!target) return null;
 
-      // 1. 動態生成 CID
       const uniqueClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
       const engagementTimeMs = Math.floor(Math.random() * 5000) + 10000;
 
-      // 2. 從 target.url 自動解析 UTM 參數
       let utmSource = '';
       let utmMedium = '';
       let utmCampaign = '';
@@ -617,36 +623,32 @@ app.post('/run-task', (req, res) => {
         utmSource = parsedUrl.searchParams.get('utm_source') || '';
         utmMedium = parsedUrl.searchParams.get('utm_medium') || '';
         utmCampaign = parsedUrl.searchParams.get('utm_campaign') || '';
-      } catch (e) {
-        // 若網址解析異常時的靜態備用處理
-      }
+      } catch (e) {}
 
       return {
         name: target.name,
         params: {
           v: '2',
           tid: MEASUREMENT_ID,
-          gtm: '45je68e1v89223874',           // 預設 GTM 標記
-          gcs: 'G111',                       // Consent Mode 同意狀態
-          gcd: '13r3r3I3I5l1',               // Consent Mode v2 規範字串
+          gtm: '45je68e1v89223874',
+          gcs: 'G111',
+          gcd: '13r3r3I3I5l1',
           cid: uniqueClientId,
-          sid: '',                           // 前端在發送前動態帶入秒數 timestamp
-          sct: '1',                          // Session Count (第一造訪為 1)
-          seg: '1',                          // Session Engagement 狀態標記
-          _fv: '1',                          // 【關鍵修正】標記為 First Visit (新使用者)
-          _ss: '1',                          // 標記 Session Start
-          _s: '1',                           // 標記 Hit Sequence 1
-          ul: 'zh-tw',                       // 使用者語系
-          _p: Math.floor(Math.random() * 1000000000).toString(), // Page ID Hash
-          _et: engagementTimeMs.toString(),  // Engagement Time (10~15秒)
+          sid: '',
+          sct: '1',
+          seg: '1',
+          _fv: '1',
+          _ss: '1',
+          _s: '1',
+          ul: 'zh-tw',
+          _p: Math.floor(Math.random() * 1000000000).toString(),
+          _et: engagementTimeMs.toString(),
           dl: target.url,
           dt: target.name,
           en: 'page_view',
-
-          // 【關鍵修正】顯式帶入 UTM 參數，確保 GA4 正式報表正確歸因
-          cs: utmSource,                     // Campaign Source
-          cm: utmMedium,                     // Campaign Medium
-          cn: utmCampaign                    // Campaign Name
+          cs: utmSource,
+          cm: utmMedium,
+          cn: utmCampaign
         }
       };
     }).filter(Boolean);
