@@ -49,45 +49,13 @@ app.post('/api/reset-counts', (req, res) => {
 // ==========================================
 
 const targetUrls = [
-  { name: '花櫃', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Flowers-Plant/c/121307?utm_source=warehouse&utm_medium=W5009&utm_campaign=posm-flowers' },
-  { name: '珠寶櫃', url: 'https://www.costco.com.tw/Jewelry-Gold/Jewelry-Buying-guide/Jewelry-Gold/c/CL10?utm_source=warehouse&utm_medium=W5009&utm_campaign=posm-jewelry' },
-  { name: 'Rollout 家具海報', url: 'https://www.costco.com.tw/content/showroom?utm_source=warehouse&utm_medium=W5009&utm_campaign=Poster-FurnitureRollOut' },
-  { name: 'Rollout Lsign', url: 'https://www.costco.com.tw/content/showroom?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-FurnitureRollOut' },
-  { name: '吊掛', url: 'https://www.costco.com.tw/c/hero-showroom?utm_source=warehouse&utm_medium=W5009&utm_campaign=showroom-hangingbanner' },
-  { name: '易拉展', url: 'https://www.costco.com.tw/c/hero-showroom?utm_source=warehouse&utm_medium=W5009&utm_campaign=showroom-rollupbanner' },
-  { name: 'Lsign 通用', url: 'https://www.costco.com.tw/c/OnlineExclusive?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-OnlineExclusive' },
-  { name: 'Lsign 家電', url: 'https://www.costco.com.tw/Televisions-Appliances/Large-Appliances/c/301?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-Appliances' },
-  { name: 'Lsign 電視', url: 'https://www.costco.com.tw/Televisions-Appliances/TV-Home-Entertainment/c/101?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-tvs' },
-  { name: 'Lsign 輪胎', url: 'https://www.costco.com.tw/Sports-Lifestyle/Automotive/c/1421?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-Tire' },
-  { name: 'Lsign 玩具', url: 'https://www.costco.com.tw/Household-Baby-Toys/Toys/c/1308?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D28' },
-  { name: 'Lsign HABA', url: 'https://www.costco.com.tw/Health-Beauty/Personal-Care/c/801?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D20' },
-  { name: 'Lsign 運動', url: 'https://www.costco.com.tw/Sports-Lifestyle/Sports-Fitness/c/1209?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D26' },
-  { name: 'Lsign 服飾', url: 'https://www.costco.com.tw/Clothing-Accessories/c/9?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D31D39' },
-  { name: 'Lsign 食品', url: 'https://www.costco.com.tw/Food-Dining/c/CL8?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D12D13' },
-  { name: 'Lsign 五金', url: 'https://www.costco.com.tw/Furniture-Kitchen/Hardware-DIY/c/605?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D23' },
-  { name: 'Lsign 床墊', url: 'https://www.costco.com.tw/Furniture-Kitchen/Bedding/Mattress-Toppers/c/60205?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-Mattress' },
-  { name: 'Lsign 儲藏屋', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Outdoor-Storage/c/40201?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D27' },
-  { name: 'Lsign 沙發', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Sofas-Sectionals/c/50202?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D38' },
-  { name: 'ENDCAP', url: 'https://www.costco.com.tw/c/OnlineExclusive?utm_source=warehouse&utm_medium=W5009&utm_campaign=Endcap-OnlineEX' },
-  { name: '靜電貼紙 同價', url: 'https://www.costco.com.tw/Same-Price/c/hero-sameprice?utm_source=warehouse&utm_medium=W5009&utm_campaign=Sticker-SamePrice' },
-  { name: 'M / L Sign 同價', url: 'https://www.costco.com.tw/Same-Price/c/hero-sameprice?utm_source=warehouse&utm_medium=W5009&utm_campaign=Sign-SamePrice' },
-  { name: 'fy26p8 Minispotlight 週期購', url: 'https://www.costco.com.tw/content/subscription?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26p8_Minispotlight_Subscription' },
-  { name: 'fy26p8 Minispotlight Costco APP', url: 'https://www.costco.com.tw/costco-app?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26p8_Minispotlight_CostcoApp' },
-  { name: 'fy26 p10 app poster iOS', url: 'https://www.costco.com.tw/content/costco-app-ios?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_app_poster_iOS' },
-  { name: 'fy26 p10 app poster Android', url: 'https://www.costco.com.tw/content/costco-app-ios?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_app_poster_Android' },
-  { name: 'fy26 p10 minispotlight iOS', url: 'https://www.costco.com.tw/content/costco-app-ios?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_mini_spotlight_iOS' },
-  { name: 'fy26 p10 minispotlight Android', url: 'https://www.costco.com.tw/content/costco-app-ios?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_mini_spotlight_Android' },
-  { name: 'fy26p10w4 EM', url: 'https://www.costco.com.tw/executive-rewards?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26p_10w4_EM' },
-  { name: 'fy26p10w4 D27', url: 'https://www.costco.com.tw/Lawn-Garden/Patio-Furniture/Outdoor-Patio-Furniture/c/40102?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_banner_d27' },
-  { name: 'fy26p12w3 Showroom 1', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Sofas-Sectionals/c/50202?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p12_Showroom_Sofas' },
-  { name: 'fy26p12w3 Showroom 2', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Cabinets-Tables/c/50407?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p12_Showroom_Cabinets' },
-  { name: 'fy26p12w3 Showroom 3', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Dining-Sets/c/50301?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p12_Showroom_DiningSets' },
-  { name: 'fy26p12w3 Showroom 4', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Computer-Desk-Chair-Sets/c/50602?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p12_Showroom_ComputerDeskChair' }
+  { name: '花櫃', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Flowers-Plant/c/121307?utm_source=warehouse&utm_medium=W874&utm_campaign=posm-flowers' },
+  { name: '珠寶櫃', url: 'https://www.costco.com.tw/Jewelry-Gold/Jewelry-Buying-guide/Jewelry-Gold/c/CL10?utm_source=warehouse&utm_medium=W874&utm_campaign=posm-jewelry' },
+  { name: 'Rollout 家具海報', url: 'https://www.costco.com.tw/content/showroom?utm_source=warehouse&utm_medium=W874&utm_campaign=Poster-FurnitureRollOut' },
+ 
 ];
 
 const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
-// 固定全域使用的 Client ID，避免 User 數據膨脹
-const FIXED_CLIENT_ID = '100000000.200000000';
 
 app.get('/', (req, res) => {
   const checkboxesHtml = targetUrls.map((item, index) => `
@@ -359,16 +327,6 @@ app.get('/', (req, res) => {
             var currentIpAddress = '未知 IP';
             var totalUrlCount = ${targetUrls.length};
 
-            // 💡 前端固定 Session ID 邏輯，避免每次觸發 Session 重置
-            function getPersistentSessionId() {
-                var sid = localStorage.getItem('ga4_persistent_sid');
-                if (!sid) {
-                    sid = Math.floor(Date.now() / 1000).toString();
-                    localStorage.setItem('ga4_persistent_sid', sid);
-                }
-                return sid;
-            }
-
             // 全域異步載入計數
             async function loadDailyCounts() {
                 try {
@@ -434,6 +392,7 @@ app.get('/', (req, res) => {
                 fetchCurrentIp();
                 loadDailyCounts();
                 
+                // 每 10 秒自動輪巡全域發送次數，確保各裝置畫面同步
                 setInterval(loadDailyCounts, 10000);
             });
 
@@ -551,15 +510,12 @@ app.get('/', (req, res) => {
                     var data = await res.json();
 
                     if (data.success && data.items) {
-                        var persistentSid = getPersistentSessionId();
-
                         for (var i = 0; i < data.items.length; i++) {
                             if (isStopped) break;
 
                             var item = data.items[i];
 
-                            // 💡 覆蓋為固定的 Session ID 與螢幕解析度
-                            item.params.sid = persistentSid;
+                            item.params.sid = Math.floor(Date.now() / 1000).toString();
                             item.params.sr = (window.screen && window.screen.width && window.screen.height) 
                               ? (window.screen.width + 'x' + window.screen.height) 
                               : '1920x1080';
@@ -575,7 +531,7 @@ app.get('/', (req, res) => {
 
                                 var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
                                   '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
-                                  '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + '<br>' +
+                                  '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>_fv:</b> ' + item.params._fv + '<br>' +
                                   '<span style="padding-left: 20px;"><b>UTM 歸因:</b> source=' + (item.params.cs||'none') + ' | medium=' + (item.params.cm||'none') + ' | campaign=' + (item.params.cn||'none') + '</span><br>' +
                                   '<span style="padding-left: 20px;"><b>Consent Mode:</b> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
                                   '<span style="padding-left: 20px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
@@ -625,6 +581,9 @@ app.post('/run-task', (req, res) => {
       const target = targetUrls[targetIndex];
       if (!target) return null;
 
+      const uniqueClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
+      const engagementTimeMs = Math.floor(Math.random() * 5000) + 10000;
+
       let utmSource = '';
       let utmMedium = '';
       let utmCampaign = '';
@@ -644,13 +603,16 @@ app.post('/run-task', (req, res) => {
           gtm: '45je68e1v89223874',
           gcs: 'G111',
           gcd: '13r3r3I3I5l1',
-          cid: FIXED_CLIENT_ID, // 💡 使用全域固定的 Client ID
-          sid: '',               // 前端會賦予固定的 Session ID
+          cid: uniqueClientId,
+          sid: '',
           sct: '1',
           seg: '1',
+          _fv: '1',
+          _ss: '1',
+          _s: '1',
           ul: 'zh-tw',
           _p: Math.floor(Math.random() * 1000000000).toString(),
-          _et: '1000',
+          _et: engagementTimeMs.toString(),
           dl: target.url,
           dt: target.name,
           en: 'page_view',
