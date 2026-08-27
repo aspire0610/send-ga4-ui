@@ -86,6 +86,8 @@ const targetUrls = [
 ];
 
 const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
+// 固定全域使用的 Client ID，避免 User 數據膨脹
+const FIXED_CLIENT_ID = '100000000.200000000';
 
 app.get('/', (req, res) => {
   const checkboxesHtml = targetUrls.map((item, index) => `
@@ -357,6 +359,16 @@ app.get('/', (req, res) => {
             var currentIpAddress = '未知 IP';
             var totalUrlCount = ${targetUrls.length};
 
+            // 💡 前端固定 Session ID 邏輯，避免每次觸發 Session 重置
+            function getPersistentSessionId() {
+                var sid = localStorage.getItem('ga4_persistent_sid');
+                if (!sid) {
+                    sid = Math.floor(Date.now() / 1000).toString();
+                    localStorage.setItem('ga4_persistent_sid', sid);
+                }
+                return sid;
+            }
+
             // 全域異步載入計數
             async function loadDailyCounts() {
                 try {
@@ -422,7 +434,6 @@ app.get('/', (req, res) => {
                 fetchCurrentIp();
                 loadDailyCounts();
                 
-                // 每 10 秒自動輪巡全域發送次數，確保各裝置畫面同步
                 setInterval(loadDailyCounts, 10000);
             });
 
@@ -540,12 +551,15 @@ app.get('/', (req, res) => {
                     var data = await res.json();
 
                     if (data.success && data.items) {
+                        var persistentSid = getPersistentSessionId();
+
                         for (var i = 0; i < data.items.length; i++) {
                             if (isStopped) break;
 
                             var item = data.items[i];
 
-                            item.params.sid = Math.floor(Date.now() / 1000).toString();
+                            // 💡 覆蓋為固定的 Session ID 與螢幕解析度
+                            item.params.sid = persistentSid;
                             item.params.sr = (window.screen && window.screen.width && window.screen.height) 
                               ? (window.screen.width + 'x' + window.screen.height) 
                               : '1920x1080';
@@ -561,7 +575,7 @@ app.get('/', (req, res) => {
 
                                 var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
                                   '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
-                                  '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>_fv:</b> ' + item.params._fv + '<br>' +
+                                  '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + '<br>' +
                                   '<span style="padding-left: 20px;"><b>UTM 歸因:</b> source=' + (item.params.cs||'none') + ' | medium=' + (item.params.cm||'none') + ' | campaign=' + (item.params.cn||'none') + '</span><br>' +
                                   '<span style="padding-left: 20px;"><b>Consent Mode:</b> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
                                   '<span style="padding-left: 20px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
@@ -611,9 +625,6 @@ app.post('/run-task', (req, res) => {
       const target = targetUrls[targetIndex];
       if (!target) return null;
 
-      const uniqueClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
-      const engagementTimeMs = Math.floor(Math.random() * 5000) + 10000;
-
       let utmSource = '';
       let utmMedium = '';
       let utmCampaign = '';
@@ -633,16 +644,13 @@ app.post('/run-task', (req, res) => {
           gtm: '45je68e1v89223874',
           gcs: 'G111',
           gcd: '13r3r3I3I5l1',
-          cid: uniqueClientId,
-          sid: '',
+          cid: FIXED_CLIENT_ID, // 💡 使用全域固定的 Client ID
+          sid: '',               // 前端會賦予固定的 Session ID
           sct: '1',
           seg: '1',
-          _fv: '1',
-          _ss: '1',
-          _s: '1',
           ul: 'zh-tw',
           _p: Math.floor(Math.random() * 1000000000).toString(),
-          _et: engagementTimeMs.toString(),
+          _et: '1000',
           dl: target.url,
           dt: target.name,
           en: 'page_view',
