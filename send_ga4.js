@@ -50,11 +50,11 @@ app.post('/api/reset-counts', (req, res) => {
 
 const targetUrls = [
   
-  { name: 'Lsign 運動''-874', url: 'https://www.costco.com.tw/Sports-Lifestyle/Sports-Fitness/c/1209?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-D26' },
-  { name: 'Lsign 服飾''-874', url: 'https://www.costco.com.tw/Clothing-Accessories/c/9?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-D31D39' },
-  { name: 'Lsign 食品''-874', url: 'https://www.costco.com.tw/Food-Dining/c/CL8?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-D12D13' },
-  { name: 'Lsign 食品''-5007', url: 'https://www.costco.com.tw/Food-Dining/c/CL8?utm_source=warehouse&utm_medium=W5007&utm_campaign=Lsign-D12D13' },
-  { name: 'Lsign 五金''-5007', url: 'https://www.costco.com.tw/Furniture-Kitchen/Hardware-DIY/c/605?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-D23' },
+  { name: '874-Lsign 運動'dt:'Lsign 運動', url: 'https://www.costco.com.tw/Sports-Lifestyle/Sports-Fitness/c/1209?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-D26' },
+  { name: '874-Lsign 服飾'dt:'Lsign 服飾', url: 'https://www.costco.com.tw/Clothing-Accessories/c/9?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-D31D39' },
+  { name: '874-Lsign 食品'dt:'Lsign 食品', url: 'https://www.costco.com.tw/Food-Dining/c/CL8?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-D12D13' },
+  { name: '5007-Lsign 食品'dt:'Lsign 食品', url: 'https://www.costco.com.tw/Food-Dining/c/CL8?utm_source=warehouse&utm_medium=W5007&utm_campaign=Lsign-D12D13' },
+  { name: '5007-Lsign 五金'dt:'Lsign 五金', url: 'https://www.costco.com.tw/Furniture-Kitchen/Hardware-DIY/c/605?utm_source=warehouse&utm_medium=W5007&utm_campaign=Lsign-D23' },
   
 ];
 
@@ -635,7 +635,7 @@ app.post('/run-task', (req, res) => {
           _p: Math.floor(Math.random() * 1000000000).toString(),
           _et: engagementTimeMs.toString(),
           dl: target.url,
-          dt: target.name,
+          dt: target.dt,
           en: 'page_view',
           cs: utmSource,
           cm: utmMedium,
