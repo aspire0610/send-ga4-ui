@@ -49,7 +49,6 @@ app.post('/api/reset-counts', (req, res) => {
 // ==========================================
 
 const targetUrls = [
-  
   { name: 'Lsign 家電', url: 'https://www.costco.com.tw/Televisions-Appliances/Large-Appliances/c/301?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-Appliances' },
   { name: 'Lsign 電視', url: 'https://www.costco.com.tw/Televisions-Appliances/TV-Home-Entertainment/c/101?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-tvs' },
   { name: 'Lsign 輪胎', url: 'https://www.costco.com.tw/Sports-Lifestyle/Automotive/c/1421?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-Tire' },
@@ -65,7 +64,6 @@ const targetUrls = [
   { name: 'ENDCAP', url: 'https://www.costco.com.tw/c/OnlineExclusive?utm_source=warehouse&utm_medium=W874&utm_campaign=Endcap-OnlineEX' },
   { name: '靜電貼紙 同價', url: 'https://www.costco.com.tw/Same-Price/c/hero-sameprice?utm_source=warehouse&utm_medium=W874&utm_campaign=Sticker-SamePrice' },
   { name: 'M / L Sign 同價', url: 'https://www.costco.com.tw/Same-Price/c/hero-sameprice?utm_source=warehouse&utm_medium=W874&utm_campaign=Sign-SamePrice' },
-  
 ];
 
 const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
@@ -421,7 +419,10 @@ app.get('/', (req, res) => {
             }
 
             function handleStart() {
+                // 修復：啟動前先徹底清理舊 Timer，避免多重計時器並行
+                stopAutoLoop();
                 isStopped = false;
+                
                 var isAuto = document.getElementById('auto-repeat-chk').checked;
                 
                 if (isAuto) {
@@ -439,8 +440,8 @@ app.get('/', (req, res) => {
 
             function stopAutoLoop() {
                 isStopped = true;
-                clearTimeout(autoTimer);
-                clearInterval(countdownTimer);
+                if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
+                if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
 
                 updateStatus('🛑 已停止自動發送', '#f87171');
                 document.getElementById('start-btn').style.display = 'inline-block';
@@ -451,8 +452,17 @@ app.get('/', (req, res) => {
 
             async function startNextLoop() {
                 if (isStopped) return;
-                currentRunCount++;
                 
+                // 修復：檢查發送次數是否已達上限
+                if (currentRunCount >= maxRuns) {
+                    var logBox = document.getElementById('log-box');
+                    logBox.innerHTML += '<span class="log-warn">已達到設定的總重複次數 (' + maxRuns + ' 次)，自動停止任務。</span><br>';
+                    logBox.scrollTop = logBox.scrollHeight;
+                    stopAutoLoop();
+                    return;
+                }
+
+                currentRunCount++;
                 await executeTask();
                 
                 if (isStopped) return;
@@ -473,6 +483,9 @@ app.get('/', (req, res) => {
                 
                 updateStatus('⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' + remaining + ' 秒', '#38bdf8');
 
+                // 清除舊的倒數計時器
+                if (countdownTimer) clearInterval(countdownTimer);
+                
                 countdownTimer = setInterval(function() {
                     if (isStopped) { clearInterval(countdownTimer); return; }
                     remaining--;
@@ -483,6 +496,9 @@ app.get('/', (req, res) => {
                     }
                 }, 1000);
 
+                // 清除舊的定時器
+                if (autoTimer) clearTimeout(autoTimer);
+                
                 autoTimer = setTimeout(function() {
                     if (!isStopped) startNextLoop();
                 }, sec * 1000);
