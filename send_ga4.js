@@ -50,12 +50,17 @@ app.post('/api/reset-counts', (req, res) => {
 
 const targetUrls = [
   
+  { name: '886-Lsign 食品',dt:'Lsign 食品', url: 'https://www.costco.com.tw/Food-Dining/c/CL8?utm_source=warehouse&utm_medium=W886&utm_campaign=Lsign-D12D13' },
+  { name: '886-Lsign 五金',dt:'Lsign 五金', url: 'https://www.costco.com.tw/Furniture-Kitchen/Hardware-DIY/c/605?utm_source=warehouse&utm_medium=W886&utm_campaign=Lsign-D23' },
+  { name: '886-Lsign 沙發',dt:'Lsign 沙發', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Sofas-Sectionals/c/50202?utm_source=warehouse&utm_medium=W886&utm_campaign=Lsign-D38' },
+  
   { name: '874-Lsign 運動',dt:'Lsign 運動', url: 'https://www.costco.com.tw/Sports-Lifestyle/Sports-Fitness/c/1209?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-D26' },
   { name: '874-Lsign 服飾',dt:'Lsign 服飾', url: 'https://www.costco.com.tw/Clothing-Accessories/c/9?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-D31D39' },
   { name: '874-Lsign 食品',dt:'Lsign 食品', url: 'https://www.costco.com.tw/Food-Dining/c/CL8?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-D12D13' },
+  
   { name: '5007-Lsign 食品',dt:'Lsign 食品', url: 'https://www.costco.com.tw/Food-Dining/c/CL8?utm_source=warehouse&utm_medium=W5007&utm_campaign=Lsign-D12D13' },
   { name: '5007-Lsign 五金',dt:'Lsign 五金', url: 'https://www.costco.com.tw/Furniture-Kitchen/Hardware-DIY/c/605?utm_source=warehouse&utm_medium=W5007&utm_campaign=Lsign-D23' },
-  
+  { name: '5007-Lsign 電視',dt:'Lsign 電視', url: 'https://www.costco.com.tw/Televisions-Appliances/TV-Home-Entertainment/c/101?utm_source=warehouse&utm_medium=W5007&utm_campaign=Lsign-tvs' },
 ];
 
 const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
