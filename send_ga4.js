@@ -49,10 +49,7 @@ app.post('/api/reset-counts', (req, res) => {
 });
 
 // ==========================================
-// 補齊：後端任務處理 API (/run-task)
-// ==========================================
-// ==========================================
-// 修正版：後端任務處理 API (/run-task)
+// 後端任務處理 API (/run-task)
 // ==========================================
 app.post('/run-task', (req, res) => {
   const { indexes, cm } = req.body;
@@ -436,7 +433,8 @@ app.get('/', (req, res) => {
             var maxRuns = 1;
             var currentIpAddress = '未知 IP';
             var totalUrlCount = ${targetUrls.length};
-            var currentCancelDelay = null; // 用於中斷延遲
+            var currentCancelDelay = null;
+            var activeAbortController = null; // 用於強制切斷正在進行中的 Fetch HTTP 請求
 
             async function loadDailyCounts() {
                 try {
@@ -499,7 +497,7 @@ app.get('/', (req, res) => {
             window.addEventListener('DOMContentLoaded', function() {
                 fetchCurrentIp();
                 loadDailyCounts();
-                setInterval(loadDailyCounts, 10000);
+                setInterval(loadDailyCounts, 5000); // 跨設備同步更新頻率：5秒
             });
 
             function toggleAll(status) {
@@ -544,7 +542,11 @@ app.get('/', (req, res) => {
                 } else {
                     currentRunCount = 1;
                     maxRuns = 1;
-                    executeTask();
+                    document.getElementById('start-btn').style.display = 'none';
+                    document.getElementById('stop-btn').style.display = 'inline-block';
+                    executeTask().then(function() {
+                        if (!isStopped) stopAutoLoop();
+                    });
                 }
             }
 
@@ -552,9 +554,10 @@ app.get('/', (req, res) => {
                 isStopped = true;
                 if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
                 if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
-                if (currentCancelDelay) { currentCancelDelay(); } // 立即觸發並中斷正等待中的延遲
+                if (currentCancelDelay) { currentCancelDelay(); } // 立即中斷等待中的延遲
+                if (activeAbortController) { activeAbortController.abort(); activeAbortController = null; } // 強制切斷發送中的 HTTP 請求
 
-                updateStatus('🛑 已停止自動發送', '#f87171');
+                updateStatus('🛑 已停止發送', '#f87171');
                 document.getElementById('start-btn').style.display = 'inline-block';
                 document.getElementById('stop-btn').style.display = 'none';
                 document.getElementById('start-btn').disabled = false;
@@ -640,9 +643,11 @@ app.get('/', (req, res) => {
                 logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + ']' + runTag + ' 開始發送選中的 ' + selectedIndexes.length + ' 筆資料... (當前來源 IP: ' + currentIpAddress + ')</span><br>';
 
                 try {
+                    activeAbortController = new AbortController();
                     var res = await fetch('/run-task', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
+                        signal: activeAbortController.signal,
                         body: JSON.stringify({ 
                             indexes: selectedIndexes,
                             cm: selectedCm 
@@ -653,7 +658,7 @@ app.get('/', (req, res) => {
 
                     if (data.success && data.items) {
                         for (var i = 0; i < data.items.length; i++) {
-                            // 每次迴圈開始前都二次檢查狀態，確保停止指令生效
+                            // 每次發送單一項目時均進行狀態二次檢查，確保可以隨時按下停止並徹底終止發送
                             if (isStopped) {
                                 logBox.innerHTML += '<span class="log-warn">🛑 收到中斷請求，已停止後續發送。</span><br>';
                                 break;
@@ -670,40 +675,42 @@ app.get('/', (req, res) => {
                             var targetUrl = 'https://www.google-analytics.com/g/collect?' + queryParams;
 
                             try {
-                                await fetch(targetUrl, { mode: 'no-cors' });
+                                activeAbortController = new AbortController();
+                                // 直連發送至 GA4
+                                await fetch(targetUrl, { 
+                                    method: 'POST', 
+                                    mode: 'no-cors',
+                                    signal: activeAbortController.signal 
+                                });
 
-                                await incrementDailyCount(selectedIndexes[i]);
+                                // 發送成功後更新當日記數
+                                await incrementDailyCount(item.index);
 
-                                var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
-                                  '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
-                                  '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>_fv:</b> ' + item.params._fv + '<br>' +
-                                  '<span style="padding-left: 20px;"><b>UTM 歸因:</b> source=' + (item.params.cs||'none') + ' | medium=' + (item.params.cm||'none') + ' | campaign=' + (item.params.cn||'none') + '</span><br>' +
-                                  '<span style="padding-left: 20px;"><b>Consent Mode:</b> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
-                                  '<span style="padding-left: 20px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
-                                  '<span style="padding-left: 20px;"><b>dl:</b> ' + item.params.dl + '</span>' +
-                                '</div>';
-
-                                logBox.innerHTML += '<span style="color: #34d399;">[成功] (' + (i + 1) + '/' + data.items.length + ') ' + item.name + ' 已送達</span><br>' + paramLogHtml;
-                            } catch (sendErr) {
-                                logBox.innerHTML += '<span style="color: #f87171;">[失敗] (' + (i + 1) + '/' + data.items.length + ') ' + item.name + ' 失敗: ' + sendErr.message + '</span><br>';
+                                logBox.innerHTML += '<span>[成功] ' + item.name + ' (' + item.params.cm + ')</span><br>';
+                            } catch (err) {
+                                if (err.name === 'AbortError') {
+                                    logBox.innerHTML += '<span class="log-warn">🛑 請求已被中斷。</span><br>';
+                                    break;
+                                }
+                                logBox.innerHTML += '<span class="log-err">[失敗] ' + item.name + ' - ' + err.message + '</span><br>';
                             }
 
                             logBox.scrollTop = logBox.scrollHeight;
 
-                            if (i < data.items.length - 1) {
-                                var delayMs = Math.floor(Math.random() * 5000) + 5000;
-                                await interruptibleDelay(delayMs); // 使用可中斷延遲
+                            // 項目間微幅間隔，並可在間隔期間隨時被停止中斷
+                            if (i < data.items.length - 1 && !isStopped) {
+                                await interruptibleDelay(200);
                             }
                         }
                     }
                 } catch (err) {
-                    logBox.innerHTML += '<span class="log-err">執行發生錯誤: ' + err.message + '</span><br>';
-                } finally {
-                    if (!isAuto && !isStopped) {
-                        btn.disabled = false;
-                        btn.innerText = '單次發送 / 啟動自動重複';
-                        updateStatus('✅ 發送完畢', '#34d399');
+                    if (err.name === 'AbortError') {
+                        logBox.innerHTML += '<span class="log-warn">🛑 任務已被取消。</span><br>';
+                    } else {
+                        logBox.innerHTML += '<span class="log-err">任務執行失敗: ' + err.message + '</span><br>';
                     }
+                } finally {
+                    activeAbortController = null;
                 }
             }
         </script>
@@ -713,5 +720,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
