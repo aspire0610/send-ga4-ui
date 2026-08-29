@@ -312,12 +312,13 @@ app.get('/', (req, res) => {
             <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                 <label style="font-size: 13px; color: #cbd5e1; font-weight: 600;">切換 Medium (cm / utm_medium):</label>
                 <select id="cm-select" class="btn-secondary">
-                    <option value="DEFAULT">保持預設 (W5009)</option>
+                  
                     <option value="W5009">W5009</option>
                     <option value="W5003">W5003</option>
                     <option value="W5010">W5010</option>
                     <option value="W872">W872</option>
                     <option value="W874">W874</option>
+                    <option value="W886">W886</option>
                     <option value="W5001">W5001</option>
                     <option value="W5002">W5002</option>
                     <option value="W5007">W5007</option>
