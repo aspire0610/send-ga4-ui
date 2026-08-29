@@ -2,98 +2,12 @@ const express = require('express');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
 
 // 解析 JSON Body
 app.use(express.json());
 
-// ==========================================
-// 全域記憶體計數器邏輯 (跨設備同步)
-// ==========================================
-function getTaiwanDate() {
-  // 使用 sv-SE 格式確保穩定輸出 YYYY-MM-DD
-  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
-}
-
-let dailyCounts = {}; 
-let lastRecordDate = getTaiwanDate();
-
-function checkAndResetDaily() {
-  const today = getTaiwanDate();
-  if (lastRecordDate !== today) {
-    dailyCounts = {};
-    lastRecordDate = today;
-  }
-}
-
-// 讀取全域計數 API
-app.get('/api/daily-counts', (req, res) => {
-  checkAndResetDaily();
-  res.json({ success: true, date: lastRecordDate, counts: dailyCounts });
-});
-
-// 發送成功後更新單項計數 API
-app.post('/api/increment-count', (req, res) => {
-  checkAndResetDaily();
-  const { index } = req.body;
-  if (typeof index === 'number' && index >= 0) {
-    dailyCounts[index] = (dailyCounts[index] || 0) + 1;
-  }
-  res.json({ success: true, counts: dailyCounts });
-});
-
-// 重置全域計數 API
-app.post('/api/reset-counts', (req, res) => {
-  checkAndResetDaily();
-  dailyCounts = {};
-  res.json({ success: true, counts: dailyCounts });
-});
-
-// ==========================================
-// 補齊：後端任務處理 API (/run-task)
-// ==========================================
-app.post('/run-task', (req, res) => {
-  const { indexes, cm } = req.body;
-  
-  if (!Array.isArray(indexes) || indexes.length === 0) {
-    return res.status(400).json({ success: false, message: '無效的 index 陣列' });
-  }
-
-  const items = indexes.map((idx) => {
-    const target = targetUrls[idx];
-    if (!target) return null;
-
-    const urlObj = new URL(target.url);
-    const cs = urlObj.searchParams.get('utm_source') || 'warehouse';
-    const cn = urlObj.searchParams.get('utm_campaign') || 'none';
-    const mediumParam = cm || urlObj.searchParams.get('utm_medium') || 'W5009';
-
-    // 隨機產生 Client ID
-    const cid = Math.floor(Math.random() * 1000000000) + '.' + Math.floor(Math.random() * 1000000000);
-
-    return {
-      index: idx,
-      name: target.name,
-      params: {
-        v: '2',
-        tid: MEASUREMENT_ID,
-        cid: cid,
-        _fv: '1',
-        gcs: 'G111',
-        gcd: '13p3p3p2p5',
-        cs: cs,
-        cm: mediumParam,
-        cn: cn,
-        dt: target.name,
-        dl: target.url,
-        en: 'page_view'
-      }
-    };
-  }).filter(Boolean);
-
-  res.json({ success: true, items });
-});
-// ==========================================
-
+// 目標網址列表
 const targetUrls = [
   { name: '花櫃', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Flowers-Plant/c/121307?utm_source=warehouse&utm_medium=W5009&utm_campaign=posm-flowers' },
   { name: '珠寶櫃', url: 'https://www.costco.com.tw/Jewelry-Gold/Jewelry-Buying-guide/Jewelry-Gold/c/CL10?utm_source=warehouse&utm_medium=W5009&utm_campaign=posm-jewelry' },
@@ -131,578 +45,225 @@ const targetUrls = [
   { name: 'fy26p12w3 Showroom 4', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Computer-Desk-Chair-Sets/c/50602?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p12_Showroom_ComputerDeskChair' }
 ];
 
-const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
+// ==========================================
+// 全域記憶體計數器邏輯
+// ==========================================
+function getTaiwanDate() {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
+}
 
+let dailyCounts = {}; 
+let lastRecordDate = getTaiwanDate();
+
+function checkAndResetDaily() {
+  const today = getTaiwanDate();
+  if (lastRecordDate !== today) {
+    dailyCounts = {};
+    lastRecordDate = today;
+  }
+}
+
+app.get('/api/daily-counts', (req, res) => {
+  checkAndResetDaily();
+  res.json({ success: true, date: lastRecordDate, counts: dailyCounts });
+});
+
+app.post('/api/increment-count', (req, res) => {
+  checkAndResetDaily();
+  const { index } = req.body;
+  if (typeof index === 'number' && index >= 0) {
+    dailyCounts[index] = (dailyCounts[index] || 0) + 1;
+  }
+  res.json({ success: true, counts: dailyCounts });
+});
+
+app.post('/api/reset-counts', (req, res) => {
+  checkAndResetDaily();
+  dailyCounts = {};
+  res.json({ success: true, counts: dailyCounts });
+});
+
+// ==========================================
+// 後端任務處理 API (/run-task)
+// ==========================================
+app.post('/run-task', (req, res) => {
+  const { indexes, cm } = req.body;
+  
+  if (!Array.isArray(indexes) || indexes.length === 0) {
+    return res.status(400).json({ success: false, message: '無效的 index 陣列' });
+  }
+
+  const items = indexes.map((idx) => {
+    const target = targetUrls[idx];
+    if (!target) return null;
+
+    const urlObj = new URL(target.url);
+
+    // 同步替換 utm_medium
+    if (cm) {
+      urlObj.searchParams.set('utm_medium', cm);
+    }
+
+    const cs = urlObj.searchParams.get('utm_source') || 'warehouse';
+    const cn = urlObj.searchParams.get('utm_campaign') || 'none';
+    const mediumParam = urlObj.searchParams.get('utm_medium') || 'W5009';
+    const cid = Math.floor(Math.random() * 1000000000) + '.' + Math.floor(Math.random() * 1000000000);
+
+    return {
+      index: idx,
+      name: target.name,
+      params: {
+        v: '2',
+        tid: MEASUREMENT_ID,
+        cid: cid,
+        _fv: '1',
+        gcs: 'G111',
+        gcd: '13p3p3p2p5',
+        cs: cs,
+        cm: mediumParam,
+        cn: cn,
+        dt: target.name,
+        dl: urlObj.toString(), // 確保 dl 與 cm 完整同步
+        en: 'page_view'
+      }
+    };
+  }).filter(Boolean);
+
+  res.json({ success: true, items });
+});
+
+// ==========================================
+// 前端 HTML 頁面
+// ==========================================
 app.get('/', (req, res) => {
-  const checkboxesHtml = targetUrls.map((item, index) => `
-    <div class="item-card">
-      <label class="item-label">
-        <div class="item-top">
-          <input type="checkbox" name="urlIndex" value="${index}" checked class="custom-checkbox">
-          <span class="item-title"><b>${index + 1}.</b> ${item.name}</span>
-        </div>
-        <div class="item-bottom">
-          <span id="count-badge-${index}" class="badge">
-            已發送: 0 次
-          </span>
-        </div>
-      </label>
-    </div>
-  `).join('');
-
   res.send(`
-    <!DOCTYPE html>
-    <html lang="zh-TW">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>📡 GA4 發送控制台</title>
-        <style>
-            * { box-sizing: border-box; }
-            body { 
-                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "SF Pro Display", sans-serif; 
-                background: radial-gradient(circle at top left, #0f172a, #020617);
-                color: #f8fafc; 
-                padding: 12px; 
-                margin: 0; 
-                min-height: 100vh;
-            }
-            .container { 
-                max-width: 900px; 
-                margin: 0 auto; 
-                background: rgba(30, 41, 59, 0.65); 
-                backdrop-filter: blur(16px);
-                -webkit-backdrop-filter: blur(16px);
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                padding: 16px; 
-                border-radius: 16px; 
-                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); 
-            }
-            @media (min-width: 768px) { body { padding: 24px; } .container { padding: 28px; } }
-            
-            .header-bar {
-                display: flex;
-                justify-content: space-between;
-                align-items: flex-start;
-                margin-bottom: 12px;
-            }
-            h1 { font-size: 20px; margin: 0; color: #38bdf8; font-weight: 700; letter-spacing: -0.5px; }
-            .date-badge {
-                background: rgba(56, 189, 248, 0.1);
-                border: 1px solid rgba(56, 189, 248, 0.25);
-                color: #38bdf8;
-                font-size: 12px;
-                padding: 4px 10px;
-                border-radius: 20px;
-                font-weight: 600;
-                white-space: nowrap;
-            }
-            p { color: #94a3b8; margin-bottom: 15px; font-size: 13px; }
-            
-            .actions { margin-bottom: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-            
-            button, select { 
-                background: linear-gradient(135deg, #0284c7, #0369a1); 
-                color: white; 
-                border: 1px solid rgba(255,255,255,0.15); 
-                padding: 10px 18px; 
-                font-size: 14px; 
-                font-weight: 600; 
-                border-radius: 10px; 
-                cursor: pointer; 
-                transition: all 0.2s ease;
-                box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
-            }
-            select {
-                background: rgba(30, 41, 59, 0.9);
-                outline: none;
-            }
-            button:active { transform: scale(0.98); }
-            button:hover { background: linear-gradient(135deg, #0369a1, #075985); }
-            button:disabled { background: #334155; border-color: transparent; opacity: 0.6; cursor: not-allowed; box-shadow: none; }
-            
-            .btn-secondary { background: rgba(51, 65, 85, 0.8); color: #e2e8f0; font-size: 13px; padding: 8px 14px; width: auto; box-shadow: none; }
-            .btn-secondary:hover { background: rgba(71, 85, 105, 0.9); }
-            .btn-danger { background: rgba(153, 27, 27, 0.8); color: #fca5a5; font-size: 12px; padding: 8px 12px; border-radius: 8px; box-shadow: none; }
-            .btn-danger:hover { background: rgba(185, 28, 28, 0.9); }
-            .btn-stop { background: linear-gradient(135deg, #dc2626, #991b1b); box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3); }
-            
-            .total-count-badge {
-                background: rgba(16, 185, 129, 0.15);
-                border: 1px solid rgba(16, 185, 129, 0.3);
-                color: #34d399;
-                font-size: 12px;
-                padding: 6px 12px;
-                border-radius: 8px;
-                font-weight: 600;
-                white-space: nowrap;
-            }
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>GA4 Event Sender</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    .control-panel { background: #f4f4f4; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .item-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #ddd; }
+    button { cursor: pointer; padding: 6px 12px; }
+    .badge { background: #007bff; color: white; padding: 2px 6px; border-radius: 10px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h2>GA4 事件發送系統</h2>
+  
+  <div class="control-panel">
+    <label>選擇店別（utm_medium）：</label>
+    <select id="cmSelect">
+      <option value="W5001">W5001</option>
+      <option value="W5002">W5002</option>
+      <option value="W5003">W5003</option>
+      <option value="W5009" selected>W5009</option>
+    </select>
+    <button onclick="sendSelected()">發送選取項目</button>
+    <button onclick="resetCounts()">重置計數器</button>
+  </div>
 
-            .grid-box { 
-                display: grid; 
-                grid-template-columns: 1fr; 
-                gap: 8px; 
-                max-height: 360px; 
-                overflow-y: auto; 
-                background: rgba(15, 23, 42, 0.6); 
-                padding: 10px; 
-                border-radius: 12px; 
-                border: 1px solid rgba(255, 255, 255, 0.08); 
-                margin-bottom: 15px; 
-            }
-            @media (min-width: 768px) { .grid-box { grid-template-columns: 1fr 1fr; gap: 10px; max-height: 320px; padding: 14px; } }
-            
-            .item-card { 
-                background: rgba(30, 41, 59, 0.4);
-                border: 1px solid rgba(255, 255, 255, 0.05);
-                border-radius: 8px;
-                padding: 8px 12px;
-                transition: background 0.15s ease;
-            }
-            .item-card:hover { background: rgba(255, 255, 255, 0.05); }
-            .item-label { 
-                cursor: pointer; 
-                display: flex; 
-                flex-direction: column;
-                gap: 6px;
-            }
-            .item-top {
-                display: flex;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            .custom-checkbox { width: 18px; height: 18px; accent-color: #38bdf8; flex-shrink: 0; margin-top: 2px; cursor: pointer; }
-            .item-title { 
-                color: #f1f5f9; 
-                font-size: 13px; 
-                line-height: 1.4; 
-                word-break: break-word; 
-            }
-            .item-bottom {
-                display: flex;
-                justify-content: flex-end;
-            }
-            .badge { 
-                background: rgba(15, 23, 42, 0.8); 
-                color: #38bdf8; 
-                border: 1px solid rgba(56, 189, 248, 0.2);
-                font-size: 11px; 
-                font-weight: 600; 
-                padding: 2px 8px; 
-                border-radius: 10px; 
-                white-space: nowrap; 
-            }
+  <div id="itemsContainer"></div>
 
-            .auto-panel { 
-                background: rgba(15, 23, 42, 0.6); 
-                border: 1px solid rgba(255, 255, 255, 0.08); 
-                padding: 12px; 
-                border-radius: 12px; 
-                margin-bottom: 15px; 
-                display: flex; 
-                align-items: center; 
-                gap: 12px; 
-                flex-wrap: wrap; 
-            }
-            .auto-panel label { color: #cbd5e1; font-size: 13px; display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-            .auto-panel input[type="number"] { 
-                background: rgba(30, 41, 59, 0.8); 
-                border: 1px solid rgba(255, 255, 255, 0.15); 
-                color: white; 
-                padding: 6px 10px; 
-                border-radius: 6px; 
-                width: 70px; 
-                font-size: 13px; 
-                outline: none;
-            }
-            .ip-box { 
-                width: 100%; 
-                background: rgba(30, 41, 59, 0.7); 
-                border: 1px solid rgba(56, 189, 248, 0.3); 
-                color: #38bdf8; 
-                padding: 8px 12px; 
-                border-radius: 8px; 
-                font-size: 13px; 
-                display: flex; 
-                align-items: center; 
-                justify-content: space-between;
-                box-sizing: border-box;
-            }
-            
-            #log-box { 
-                background: rgba(9, 13, 22, 0.85); 
-                border: 1px solid rgba(255, 255, 255, 0.08); 
-                border-radius: 10px; 
-                padding: 12px; 
-                height: 260px; 
-                overflow-y: auto; 
-                font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; 
-                font-size: 11px; 
-                color: #34d399; 
-                line-height: 1.6; 
-            }
-            .log-err { color: #f87171; }
-            .log-info { color: #60a5fa; }
-            .log-warn { color: #fbbf24; }
-            #status-text { font-weight: 600; color: #38bdf8; width: 100%; margin-top: 4px; font-size: 14px; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header-bar">
-                <h1>📡 GA4 選擇性發送控制台 (前端直連)</h1>
-                <div class="date-badge" id="current-date">--</div>
-            </div>
-            
-            <!-- Medium (cm) 切換選單 -->
-            <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                <label style="font-size: 13px; color: #cbd5e1; font-weight: 600;">切換店代號 (cm / utm_medium):</label>
-                <select id="cm-select" class="btn-secondary">
-                    <option value="W5009">W5009</option>
-                    <option value="W5003">W5003</option>
-                    <option value="W5010">W5010</option>
-                    <option value="W872">W872</option>
-                    <option value="W874">W874</option>
-                    <option value="W886">W886</option>
-                    <option value="W5001">W5001</option>
-                    <option value="W5002">W5002</option>
-                    <option value="W5007">W5007</option>
-                    <option value="W5008">W5008</option>
-                    <option value="W5018">W5018</option>
-                    <option value="W870">W870</option>
-                    <option value="W5020">W5020</option>
-                </select>
-            </div>
+  <script>
+    const targetUrls = ${JSON.stringify(targetUrls)};
+    let dailyCounts = {};
 
-            <p>請勾選要發送的目標連結：</p>
-            
-            <div class="actions">
-                <button type="button" class="btn-secondary" onclick="toggleAll(true)">全選</button>
-                <button type="button" class="btn-secondary" onclick="toggleAll(false)">全不選</button>
-                <button type="button" class="btn-danger" onclick="resetDailyCounts()">重置今日計數</button>
-                <div class="total-count-badge" id="daily-total-badge">當日已發送總次數: 0 次</div>
-            </div>
+    async function loadCounts() {
+      const res = await fetch('/api/daily-counts');
+      const data = await res.json();
+      dailyCounts = data.counts || {};
+      render();
+    }
 
-            <div class="grid-box">
-                ${checkboxesHtml}
-            </div>
-
-            <div class="auto-panel">
-                <div class="ip-box">
-                    <div>
-                        <span>🌐 當前裝置 IP: </span>
-                        <span id="current-ip" style="font-weight: 700;">抓取中...</span>
-                    </div>
-                    <button type="button" class="btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="fetchCurrentIp()">重新整理</button>
-                </div>
-                <label>
-                    <input type="checkbox" id="auto-repeat-chk" class="custom-checkbox">
-                    啟用自動重複發送
-                </label>
-                <label>
-                    間隔 (秒): 
-                    <input type="number" id="interval-sec" value="20" min="20">
-                </label>
-                <label>
-                    重複次數: 
-                    <input type="number" id="repeat-count" value="5" min="1">
-                </label>
-                <div id="status-text"></div>
-            </div>
-
-            <div style="display: flex; gap: 10px;">
-                <button type="button" id="start-btn" style="width: 100%;" onclick="handleStart()">單次發送 / 啟動自動重複</button>
-                <button type="button" id="stop-btn" class="btn-stop" style="display: none; width: 100%;" onclick="stopAutoLoop()">停止自動發送</button>
-            </div>
-            
-            <h3 style="font-size: 13px; margin: 16px 0 8px 0; color: #94a3b8; font-weight: 600;">即時執行日誌 (包含傳送參數)：</h3>
-            <div id="log-box">等待開始執行...</div>
+    function render() {
+      const container = document.getElementById('itemsContainer');
+      container.innerHTML = targetUrls.map((item, index) => \`
+        <div class="item-row">
+          <label>
+            <input type="checkbox" class="item-checkbox" value="\${index}">
+            \${item.name}
+          </label>
+          <div>
+            <span class="badge">今日發送: \${dailyCounts[index] || 0}</span>
+            <button onclick="sendSingle(\${index})">單獨發送</button>
+          </div>
         </div>
+      \`).join('');
+    }
 
-        <script>
-            var autoTimer = null;
-            var countdownTimer = null;
-            var isStopped = false;
-            var currentRunCount = 0;
-            var maxRuns = 1;
-            var currentIpAddress = '未知 IP';
-            var totalUrlCount = ${targetUrls.length};
-            var currentCancelDelay = null; // 用於中斷延遲
+    async function sendSingle(index) {
+      const cm = document.getElementById('cmSelect').value;
+      const res = await fetch('/run-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ indexes: [index], cm })
+      });
+      const data = await res.json();
+      
+      if (data.success && data.items.length > 0) {
+        await executeSend(data.items[0]);
+      }
+    }
 
-            async function loadDailyCounts() {
-                try {
-                    var res = await fetch('/api/daily-counts');
-                    var data = await res.json();
-                    if (data.success) {
-                        var dateEl = document.getElementById('current-date');
-                        if (dateEl) dateEl.innerText = data.date;
+    async function sendSelected() {
+      const cm = document.getElementById('cmSelect').value;
+      const checkboxes = document.querySelectorAll('.item-checkbox:checked');
+      const indexes = Array.from(checkboxes).map(cb => parseInt(cb.value));
+      
+      if (indexes.length === 0) return alert('請先勾選項目');
 
-                        var counts = data.counts || {};
-                        var grandTotal = 0;
+      const res = await fetch('/run-task', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ indexes, cm })
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        for (const item of data.items) {
+          await executeSend(item);
+        }
+      }
+    }
 
-                        for (var i = 0; i < totalUrlCount; i++) {
-                            var c = counts[i] || 0;
-                            grandTotal += c;
-                            var badge = document.getElementById('count-badge-' + i);
-                            if (badge) badge.innerText = '已發送: ' + c + ' 次';
-                        }
+    async function executeSend(item) {
+      const queryParams = new URLSearchParams(item.params).toString();
+      const endpoint = 'https://www.google-analytics.com/g/collect?' + queryParams;
+      
+      try {
+        await fetch(endpoint, { mode: 'no-cors' });
+        // 更新內部計數
+        const incRes = await fetch('/api/increment-count', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ index: item.index })
+        });
+        const incData = await incRes.json();
+        dailyCounts = incData.counts;
+        render();
+      } catch (err) {
+        console.error('發送失敗:', err);
+      }
+    }
 
-                        var totalBadge = document.getElementById('daily-total-badge');
-                        if (totalBadge) totalBadge.innerText = '［全域］當日已發送總次數: ' + grandTotal + ' 次';
-                    }
-                } catch(e) {}
-            }
+    async function resetCounts() {
+      const res = await fetch('/api/reset-counts', { method: 'POST' });
+      const data = await res.json();
+      dailyCounts = data.counts;
+      render();
+    }
 
-            async function incrementDailyCount(index) {
-                try {
-                    await fetch('/api/increment-count', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ index: index })
-                    });
-                    loadDailyCounts();
-                } catch(e) {}
-            }
-
-            async function resetDailyCounts() {
-                if (confirm('確定要清空今天的【全域】發送次數紀錄嗎？（所有設備都會歸零）')) {
-                    try {
-                        await fetch('/api/reset-counts', { method: 'POST' });
-                        loadDailyCounts();
-                    } catch(e) {}
-                }
-            }
-
-            async function fetchCurrentIp() {
-                var ipEl = document.getElementById('current-ip');
-                try {
-                    ipEl.innerText = '更新中...';
-                    var res = await fetch('https://api.ipify.org?format=json');
-                    var data = await res.json();
-                    currentIpAddress = data.ip;
-                    ipEl.innerText = currentIpAddress;
-                } catch (e) {
-                    currentIpAddress = '無法取得 IP';
-                    ipEl.innerText = currentIpAddress;
-                }
-            }
-
-            window.addEventListener('DOMContentLoaded', function() {
-                fetchCurrentIp();
-                loadDailyCounts();
-                setInterval(loadDailyCounts, 10000);
-            });
-
-            function toggleAll(status) {
-                var checkboxes = document.querySelectorAll('input[name="urlIndex"]');
-                checkboxes.forEach(function(cb) { cb.checked = status; });
-            }
-
-            function updateStatus(msg, color) {
-                var el = document.getElementById('status-text');
-                el.innerText = msg;
-                if (color) el.style.color = color;
-            }
-
-            // 可立即中斷的非同步等待
-            function interruptibleDelay(ms) {
-                return new Promise(function(resolve) {
-                    var timer = setTimeout(function() {
-                        currentCancelDelay = null;
-                        resolve();
-                    }, ms);
-                    
-                    currentCancelDelay = function() {
-                        clearTimeout(timer);
-                        currentCancelDelay = null;
-                        resolve();
-                    };
-                });
-            }
-
-            function handleStart() {
-                stopAutoLoop();
-                isStopped = false;
-                
-                var isAuto = document.getElementById('auto-repeat-chk').checked;
-                
-                if (isAuto) {
-                    maxRuns = parseInt(document.getElementById('repeat-count').value, 10) || 1;
-                    currentRunCount = 0;
-                    document.getElementById('start-btn').style.display = 'none';
-                    document.getElementById('stop-btn').style.display = 'inline-block';
-                    startNextLoop();
-                } else {
-                    currentRunCount = 1;
-                    maxRuns = 1;
-                    executeTask();
-                }
-            }
-
-            function stopAutoLoop() {
-                isStopped = true;
-                if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
-                if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
-                if (currentCancelDelay) { currentCancelDelay(); } // 立即觸發並中斷正等待中的延遲
-
-                updateStatus('🛑 已停止自動發送', '#f87171');
-                document.getElementById('start-btn').style.display = 'inline-block';
-                document.getElementById('stop-btn').style.display = 'none';
-                document.getElementById('start-btn').disabled = false;
-                document.getElementById('start-btn').innerText = '單次發送 / 啟動自動重複';
-            }
-
-            async function startNextLoop() {
-                if (isStopped) return;
-                
-                if (currentRunCount >= maxRuns) {
-                    var logBox = document.getElementById('log-box');
-                    logBox.innerHTML += '<span class="log-warn">已達到設定的總重複次數 (' + maxRuns + ' 次)，自動停止任務。</span><br>';
-                    logBox.scrollTop = logBox.scrollHeight;
-                    stopAutoLoop();
-                    return;
-                }
-
-                currentRunCount++;
-                await executeTask();
-                
-                if (isStopped) return;
-
-                var isAuto = document.getElementById('auto-repeat-chk').checked;
-                if (!isAuto || currentRunCount >= maxRuns) {
-                    if (currentRunCount >= maxRuns && isAuto) {
-                        var logBox = document.getElementById('log-box');
-                        logBox.innerHTML += '<span class="log-warn">已達到設定的總重複次數 (' + maxRuns + ' 次)，自動停止任務。</span><br>';
-                        logBox.scrollTop = logBox.scrollHeight;
-                    }
-                    stopAutoLoop();
-                    return;
-                }
-
-                var sec = parseInt(document.getElementById('interval-sec').value, 10) || 20;
-                var remaining = sec;
-                
-                updateStatus('⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' + remaining + ' 秒', '#38bdf8');
-
-                if (countdownTimer) clearInterval(countdownTimer);
-                
-                countdownTimer = setInterval(function() {
-                    if (isStopped) { clearInterval(countdownTimer); return; }
-                    remaining--;
-                    if (remaining > 0) {
-                        updateStatus('⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' + remaining + ' 秒', '#38bdf8');
-                    } else {
-                        clearInterval(countdownTimer);
-                    }
-                }, 1000);
-
-                if (autoTimer) clearTimeout(autoTimer);
-                
-                autoTimer = setTimeout(function() {
-                    if (!isStopped) startNextLoop();
-                }, sec * 1000);
-            }
-
-            async function executeTask() {
-                if (isStopped) return;
-                
-                var btn = document.getElementById('start-btn');
-                var logBox = document.getElementById('log-box');
-                
-                var checkboxes = document.querySelectorAll('input[name="urlIndex"]:checked');
-                var selectedIndexes = [];
-                checkboxes.forEach(function(cb) { selectedIndexes.push(parseInt(cb.value, 10)); });
-
-                if (selectedIndexes.length === 0) {
-                    alert('請至少勾選一個連結！');
-                    stopAutoLoop();
-                    return;
-                }
-
-                btn.disabled = true;
-                var isAuto = document.getElementById('auto-repeat-chk').checked;
-                var runTag = isAuto ? ' [第 ' + currentRunCount + '/' + maxRuns + ' 輪]' : '';
-                
-                await fetchCurrentIp();
-
-                var selectedCm = document.getElementById('cm-select').value;
-
-                updateStatus('⏳ ' + runTag + ' 數據發送中...', '#f59e0b');
-                logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + ']' + runTag + ' 開始發送選中的 ' + selectedIndexes.length + ' 筆資料... (當前來源 IP: ' + currentIpAddress + ')</span><br>';
-
-                try {
-                    var res = await fetch('/run-task', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            indexes: selectedIndexes,
-                            cm: selectedCm 
-                        })
-                    });
-                    
-                    var data = await res.json();
-
-                    if (data.success && data.items) {
-                        for (var i = 0; i < data.items.length; i++) {
-                            // 每次迴圈開始前都二次檢查狀態，確保停止指令生效
-                            if (isStopped) {
-                                logBox.innerHTML += '<span class="log-warn">🛑 收到中斷請求，已停止後續發送。</span><br>';
-                                break;
-                            }
-
-                            var item = data.items[i];
-
-                            item.params.sid = Math.floor(Date.now() / 1000).toString();
-                            item.params.sr = (window.screen && window.screen.width && window.screen.height) 
-                              ? (window.screen.width + 'x' + window.screen.height) 
-                              : '1920x1080';
-
-                            var queryParams = new URLSearchParams(item.params).toString();
-                            var targetUrl = 'https://www.google-analytics.com/g/collect?' + queryParams;
-
-                            try {
-                                await fetch(targetUrl, { mode: 'no-cors' });
-
-                                await incrementDailyCount(selectedIndexes[i]);
-
-                                var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
-                                  '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
-                                  '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>_fv:</b> ' + item.params._fv + '<br>' +
-                                  '<span style="padding-left: 20px;"><b>UTM 歸因:</b> source=' + (item.params.cs||'none') + ' | medium=' + (item.params.cm||'none') + ' | campaign=' + (item.params.cn||'none') + '</span><br>' +
-                                  '<span style="padding-left: 20px;"><b>Consent Mode:</b> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
-                                  '<span style="padding-left: 20px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
-                                  '<span style="padding-left: 20px;"><b>dl:</b> ' + item.params.dl + '</span>' +
-                                '</div>';
-
-                                logBox.innerHTML += '<span style="color: #34d399;">[成功] (' + (i + 1) + '/' + data.items.length + ') ' + item.name + ' 已送達</span><br>' + paramLogHtml;
-                            } catch (sendErr) {
-                                logBox.innerHTML += '<span style="color: #f87171;">[失敗] (' + (i + 1) + '/' + data.items.length + ') ' + item.name + ' 失敗: ' + sendErr.message + '</span><br>';
-                            }
-
-                            logBox.scrollTop = logBox.scrollHeight;
-
-                            if (i < data.items.length - 1) {
-                                var delayMs = Math.floor(Math.random() * 5000) + 5000;
-                                await interruptibleDelay(delayMs); // 使用可中斷延遲
-                            }
-                        }
-                    }
-                } catch (err) {
-                    logBox.innerHTML += '<span class="log-err">執行發生錯誤: ' + err.message + '</span><br>';
-                } finally {
-                    if (!isAuto && !isStopped) {
-                        btn.disabled = false;
-                        btn.innerText = '單次發送 / 啟動自動重複';
-                        updateStatus('✅ 發送完畢', '#34d399');
-                    }
-                }
-            }
-        </script>
-    </body>
-    </html>
+    // 初始化讀取
+    loadCounts();
+  </script>
+</body>
+</html>
   `);
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`Server running on http://localhost:${PORT}`);
 });
