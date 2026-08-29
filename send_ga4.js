@@ -700,10 +700,15 @@ app.get('/', (req, res) => {
                             }
 
                             logBox.scrollTop = logBox.scrollHeight;
-
+                            
                             if (i < data.items.length - 1 && !isStopped) {
-                                await interruptibleDelay(1500);
-                            }
+    // 產生 5000 ~ 9999 毫秒 (約 5~10 秒) 的隨機延遲
+    var delayMs = Math.floor(Math.random() * 5000) + 5000;
+    
+    // 使用可被中斷的延遲函式
+    await interruptibleDelay(1500);
+}
+                            
                         }
 
                         if (!isStopped) {
