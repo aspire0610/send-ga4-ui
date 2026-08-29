@@ -49,24 +49,40 @@ app.post('/api/reset-counts', (req, res) => {
 // ==========================================
 
 const targetUrls = [
-  
-  { name: '886-花櫃',dt:'花櫃', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Flowers-Plant/c/121307?utm_source=warehouse&utm_medium=W886&utm_campaign=posm-flowers' },
-  { name: '886-珠寶櫃',dt:'珠寶櫃', url: 'https://www.costco.com.tw/Jewelry-Gold/Jewelry-Buying-guide/Jewelry-Gold/c/CL10?utm_source=warehouse&utm_medium=W886&utm_campaign=posm-jewelry' },
-  { name: '886-Lsign 食品',dt:'Lsign 食品', url: 'https://www.costco.com.tw/Food-Dining/c/CL8?utm_source=warehouse&utm_medium=W886&utm_campaign=Lsign-D12D13' },
-  { name: '886-Lsign 五金',dt:'Lsign 五金', url: 'https://www.costco.com.tw/Furniture-Kitchen/Hardware-DIY/c/605?utm_source=warehouse&utm_medium=W886&utm_campaign=Lsign-D23' },
-  { name: '886-Lsign 沙發',dt:'Lsign 沙發', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Sofas-Sectionals/c/50202?utm_source=warehouse&utm_medium=W886&utm_campaign=Lsign-D38' },
-  
-  { name: '874-花櫃',dt:'花櫃', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Flowers-Plant/c/121307?utm_source=warehouse&utm_medium=W874&utm_campaign=posm-flowers' },
-  { name: '874-珠寶櫃',dt:'珠寶櫃', url: 'https://www.costco.com.tw/Jewelry-Gold/Jewelry-Buying-guide/Jewelry-Gold/c/CL10?utm_source=warehouse&utm_medium=W874&utm_campaign=posm-jewelry' },
-  { name: '874-Lsign 運動',dt:'Lsign 運動', url: 'https://www.costco.com.tw/Sports-Lifestyle/Sports-Fitness/c/1209?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-D26' },
-  { name: '874-Lsign 服飾',dt:'Lsign 服飾', url: 'https://www.costco.com.tw/Clothing-Accessories/c/9?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-D31D39' },
-  { name: '874-Lsign 食品',dt:'Lsign 食品', url: 'https://www.costco.com.tw/Food-Dining/c/CL8?utm_source=warehouse&utm_medium=W874&utm_campaign=Lsign-D12D13' },
-  
-  { name: '5007-花櫃',dt:'花櫃', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Flowers-Plant/c/121307?utm_source=warehouse&utm_medium=W5007&utm_campaign=posm-flowers' },
-  { name: '5007-珠寶櫃',dt:'珠寶櫃', url: 'https://www.costco.com.tw/Jewelry-Gold/Jewelry-Buying-guide/Jewelry-Gold/c/CL10?utm_source=warehouse&utm_medium=W5007&utm_campaign=posm-jewelry' },
-  { name: '5007-Lsign 食品',dt:'Lsign 食品', url: 'https://www.costco.com.tw/Food-Dining/c/CL8?utm_source=warehouse&utm_medium=W5007&utm_campaign=Lsign-D12D13' },
-  { name: '5007-Lsign 五金',dt:'Lsign 五金', url: 'https://www.costco.com.tw/Furniture-Kitchen/Hardware-DIY/c/605?utm_source=warehouse&utm_medium=W5007&utm_campaign=Lsign-D23' },
-  { name: '5007-Lsign 電視',dt:'Lsign 電視', url: 'https://www.costco.com.tw/Televisions-Appliances/TV-Home-Entertainment/c/101?utm_source=warehouse&utm_medium=W5007&utm_campaign=Lsign-tvs' },
+  { name: '花櫃', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Flowers-Plant/c/121307?utm_source=warehouse&utm_medium=W5009&utm_campaign=posm-flowers' },
+  { name: '珠寶櫃', url: 'https://www.costco.com.tw/Jewelry-Gold/Jewelry-Buying-guide/Jewelry-Gold/c/CL10?utm_source=warehouse&utm_medium=W5009&utm_campaign=posm-jewelry' },
+  { name: 'Rollout 家具海報', url: 'https://www.costco.com.tw/content/showroom?utm_source=warehouse&utm_medium=W5009&utm_campaign=Poster-FurnitureRollOut' },
+  { name: 'Rollout Lsign', url: 'https://www.costco.com.tw/content/showroom?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-FurnitureRollOut' },
+  { name: '吊掛', url: 'https://www.costco.com.tw/c/hero-showroom?utm_source=warehouse&utm_medium=W5009&utm_campaign=showroom-hangingbanner' },
+  { name: '易拉展', url: 'https://www.costco.com.tw/c/hero-showroom?utm_source=warehouse&utm_medium=W5009&utm_campaign=showroom-rollupbanner' },
+  { name: 'Lsign 通用', url: 'https://www.costco.com.tw/c/OnlineExclusive?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-OnlineExclusive' },
+  { name: 'Lsign 家電', url: 'https://www.costco.com.tw/Televisions-Appliances/Large-Appliances/c/301?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-Appliances' },
+  { name: 'Lsign 電視', url: 'https://www.costco.com.tw/Televisions-Appliances/TV-Home-Entertainment/c/101?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-tvs' },
+  { name: 'Lsign 輪胎', url: 'https://www.costco.com.tw/Sports-Lifestyle/Automotive/c/1421?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-Tire' },
+  { name: 'Lsign 玩具', url: 'https://www.costco.com.tw/Household-Baby-Toys/Toys/c/1308?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D28' },
+  { name: 'Lsign HABA', url: 'https://www.costco.com.tw/Health-Beauty/Personal-Care/c/801?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D20' },
+  { name: 'Lsign 運動', url: 'https://www.costco.com.tw/Sports-Lifestyle/Sports-Fitness/c/1209?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D26' },
+  { name: 'Lsign 服飾', url: 'https://www.costco.com.tw/Clothing-Accessories/c/9?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D31D39' },
+  { name: 'Lsign 食品', url: 'https://www.costco.com.tw/Food-Dining/c/CL8?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D12D13' },
+  { name: 'Lsign 五金', url: 'https://www.costco.com.tw/Furniture-Kitchen/Hardware-DIY/c/605?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D23' },
+  { name: 'Lsign 床墊', url: 'https://www.costco.com.tw/Furniture-Kitchen/Bedding/Mattress-Toppers/c/60205?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-Mattress' },
+  { name: 'Lsign 儲藏屋', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Outdoor-Storage/c/40201?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D27' },
+  { name: 'Lsign 沙發', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Sofas-Sectionals/c/50202?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-D38' },
+  { name: 'ENDCAP', url: 'https://www.costco.com.tw/c/OnlineExclusive?utm_source=warehouse&utm_medium=W5009&utm_campaign=Endcap-OnlineEX' },
+  { name: '靜電貼紙 同價', url: 'https://www.costco.com.tw/Same-Price/c/hero-sameprice?utm_source=warehouse&utm_medium=W5009&utm_campaign=Sticker-SamePrice' },
+  { name: 'M / L Sign 同價', url: 'https://www.costco.com.tw/Same-Price/c/hero-sameprice?utm_source=warehouse&utm_medium=W5009&utm_campaign=Sign-SamePrice' },
+  { name: 'fy26p8 Minispotlight 週期購', url: 'https://www.costco.com.tw/content/subscription?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26p8_Minispotlight_Subscription' },
+  { name: 'fy26p8 Minispotlight Costco APP', url: 'https://www.costco.com.tw/costco-app?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26p8_Minispotlight_CostcoApp' },
+  { name: 'fy26 p10 app poster iOS', url: 'https://www.costco.com.tw/content/costco-app-ios?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_app_poster_iOS' },
+  { name: 'fy26 p10 app poster Android', url: 'https://www.costco.com.tw/content/costco-app-ios?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_app_poster_Android' },
+  { name: 'fy26 p10 minispotlight iOS', url: 'https://www.costco.com.tw/content/costco-app-ios?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_mini_spotlight_iOS' },
+  { name: 'fy26 p10 minispotlight Android', url: 'https://www.costco.com.tw/content/costco-app-ios?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_mini_spotlight_Android' },
+  { name: 'fy26p10w4 EM', url: 'https://www.costco.com.tw/executive-rewards?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26p_10w4_EM' },
+  { name: 'fy26p10w4 D27', url: 'https://www.costco.com.tw/Lawn-Garden/Patio-Furniture/Outdoor-Patio-Furniture/c/40102?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_banner_d27' },
+  { name: 'fy26p12w3 Showroom 1', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Sofas-Sectionals/c/50202?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p12_Showroom_Sofas' },
+  { name: 'fy26p12w3 Showroom 2', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Cabinets-Tables/c/50407?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p12_Showroom_Cabinets' },
+  { name: 'fy26p12w3 Showroom 3', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Dining-Sets/c/50301?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p12_Showroom_DiningSets' },
+  { name: 'fy26p12w3 Showroom 4', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Computer-Desk-Chair-Sets/c/50602?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p12_Showroom_ComputerDeskChair' }
 ];
 
 const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
@@ -94,7 +110,7 @@ app.get('/', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>📡GA4 發送控制台</title>
+        <title>📡 GA4 發送控制台</title>
         <style>
             * { box-sizing: border-box; }
             body { 
@@ -139,7 +155,7 @@ app.get('/', (req, res) => {
             
             .actions { margin-bottom: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
             
-            button { 
+            button, select { 
                 background: linear-gradient(135deg, #0284c7, #0369a1); 
                 color: white; 
                 border: 1px solid rgba(255,255,255,0.15); 
@@ -150,6 +166,10 @@ app.get('/', (req, res) => {
                 cursor: pointer; 
                 transition: all 0.2s ease;
                 box-shadow: 0 4px 12px rgba(2, 132, 199, 0.25);
+            }
+            select {
+                background: rgba(30, 41, 59, 0.9);
+                outline: none;
             }
             button:active { transform: scale(0.98); }
             button:hover { background: linear-gradient(135deg, #0369a1, #075985); }
@@ -287,6 +307,27 @@ app.get('/', (req, res) => {
                 <h1>📡 GA4 選擇性發送控制台 (前端直連)</h1>
                 <div class="date-badge" id="current-date">--</div>
             </div>
+            
+            <!-- Medium (cm) 切換選單 -->
+            <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                <label style="font-size: 13px; color: #cbd5e1; font-weight: 600;">切換 Medium (cm / utm_medium):</label>
+                <select id="cm-select" class="btn-secondary">
+                    <option value="DEFAULT">保持預設 (W5009)</option>
+                    <option value="W5009">W5009</option>
+                    <option value="W5003">W5003</option>
+                    <option value="W5010">W5010</option>
+                    <option value="W872">W872</option>
+                    <option value="W874">W874</option>
+                    <option value="W5001">W5001</option>
+                    <option value="W5002">W5002</option>
+                    <option value="W5007">W5007</option>
+                    <option value="W5008">W5008</option>
+                    <option value="W5018">W5018</option>
+                    <option value="W870">W870</option>
+                    <option value="W5020">W5020</option>
+                </select>
+            </div>
+
             <p>請勾選要發送的目標連結：</p>
             
             <div class="actions">
@@ -340,8 +381,8 @@ app.get('/', (req, res) => {
             var maxRuns = 1;
             var currentIpAddress = '未知 IP';
             var totalUrlCount = ${targetUrls.length};
+            var currentCancelDelay = null; // 用於中斷延遲
 
-            // 全域異步載入計數
             async function loadDailyCounts() {
                 try {
                     var res = await fetch('/api/daily-counts');
@@ -366,7 +407,6 @@ app.get('/', (req, res) => {
                 } catch(e) {}
             }
 
-            // 全域異步更新發送成功數
             async function incrementDailyCount(index) {
                 try {
                     await fetch('/api/increment-count', {
@@ -378,7 +418,6 @@ app.get('/', (req, res) => {
                 } catch(e) {}
             }
 
-            // 全域重置計數
             async function resetDailyCounts() {
                 if (confirm('確定要清空今天的【全域】發送次數紀錄嗎？（所有設備都會歸零）')) {
                     try {
@@ -405,8 +444,6 @@ app.get('/', (req, res) => {
             window.addEventListener('DOMContentLoaded', function() {
                 fetchCurrentIp();
                 loadDailyCounts();
-                
-                // 每 10 秒自動輪巡全域發送次數，確保各裝置畫面同步
                 setInterval(loadDailyCounts, 10000);
             });
 
@@ -421,8 +458,23 @@ app.get('/', (req, res) => {
                 if (color) el.style.color = color;
             }
 
+            // 可立即中斷的非同步等待
+            function interruptibleDelay(ms) {
+                return new Promise(function(resolve) {
+                    var timer = setTimeout(function() {
+                        currentCancelDelay = null;
+                        resolve();
+                    }, ms);
+                    
+                    currentCancelDelay = function() {
+                        clearTimeout(timer);
+                        currentCancelDelay = null;
+                        resolve();
+                    };
+                });
+            }
+
             function handleStart() {
-                // 修復：啟動前先徹底清理舊 Timer，避免多重計時器並行
                 stopAutoLoop();
                 isStopped = false;
                 
@@ -445,6 +497,7 @@ app.get('/', (req, res) => {
                 isStopped = true;
                 if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
                 if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
+                if (currentCancelDelay) { currentCancelDelay(); } // 立即觸發並中斷正等待中的延遲
 
                 updateStatus('🛑 已停止自動發送', '#f87171');
                 document.getElementById('start-btn').style.display = 'inline-block';
@@ -456,7 +509,6 @@ app.get('/', (req, res) => {
             async function startNextLoop() {
                 if (isStopped) return;
                 
-                // 修復：檢查發送次數是否已達上限
                 if (currentRunCount >= maxRuns) {
                     var logBox = document.getElementById('log-box');
                     logBox.innerHTML += '<span class="log-warn">已達到設定的總重複次數 (' + maxRuns + ' 次)，自動停止任務。</span><br>';
@@ -481,12 +533,11 @@ app.get('/', (req, res) => {
                     return;
                 }
 
-                var sec = parseInt(document.getElementById('interval-sec').value, 10) || 60;
+                var sec = parseInt(document.getElementById('interval-sec').value, 10) || 20;
                 var remaining = sec;
                 
                 updateStatus('⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' + remaining + ' 秒', '#38bdf8');
 
-                // 清除舊的倒數計時器
                 if (countdownTimer) clearInterval(countdownTimer);
                 
                 countdownTimer = setInterval(function() {
@@ -499,7 +550,6 @@ app.get('/', (req, res) => {
                     }
                 }, 1000);
 
-                // 清除舊的定時器
                 if (autoTimer) clearTimeout(autoTimer);
                 
                 autoTimer = setTimeout(function() {
@@ -529,6 +579,8 @@ app.get('/', (req, res) => {
                 
                 await fetchCurrentIp();
 
+                var selectedCm = document.getElementById('cm-select').value;
+
                 updateStatus('⏳ ' + runTag + ' 數據發送中...', '#f59e0b');
                 logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + ']' + runTag + ' 開始發送選中的 ' + selectedIndexes.length + ' 筆資料... (當前來源 IP: ' + currentIpAddress + ')</span><br>';
 
@@ -536,14 +588,21 @@ app.get('/', (req, res) => {
                     var res = await fetch('/run-task', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ indexes: selectedIndexes })
+                        body: JSON.stringify({ 
+                            indexes: selectedIndexes,
+                            cm: selectedCm 
+                        })
                     });
                     
                     var data = await res.json();
 
                     if (data.success && data.items) {
                         for (var i = 0; i < data.items.length; i++) {
-                            if (isStopped) break;
+                            // 每次迴圈開始前都二次檢查狀態，確保停止指令生效
+                            if (isStopped) {
+                                logBox.innerHTML += '<span class="log-warn">🛑 收到中斷請求，已停止後續發送。</span><br>';
+                                break;
+                            }
 
                             var item = data.items[i];
 
@@ -558,7 +617,6 @@ app.get('/', (req, res) => {
                             try {
                                 await fetch(targetUrl, { mode: 'no-cors' });
 
-                                // 發送成功後同步更新全域計數
                                 await incrementDailyCount(selectedIndexes[i]);
 
                                 var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
@@ -579,7 +637,7 @@ app.get('/', (req, res) => {
 
                             if (i < data.items.length - 1) {
                                 var delayMs = Math.floor(Math.random() * 5000) + 5000;
-                                await new Promise(function(resolve) { setTimeout(resolve, delayMs); });
+                                await interruptibleDelay(delayMs); // 使用可中斷延遲
                             }
                         }
                     }
@@ -604,6 +662,7 @@ app.get('/', (req, res) => {
 app.post('/run-task', (req, res) => {
   try {
     const selectedIndexes = (req.body && Array.isArray(req.body.indexes)) ? req.body.indexes : [];
+    const customCm = (req.body && req.body.cm) ? req.body.cm : 'DEFAULT';
 
     if (selectedIndexes.length === 0) {
       return res.status(400).json({ success: false, message: '未收到有效的選取索引。' });
@@ -619,9 +678,17 @@ app.post('/run-task', (req, res) => {
       let utmSource = '';
       let utmMedium = '';
       let utmCampaign = '';
+      let finalDlUrl = target.url;
 
       try {
         const parsedUrl = new URL(target.url);
+        
+        // 若下拉選單選擇了非預設值，覆寫 utm_medium
+        if (customCm !== 'DEFAULT') {
+          parsedUrl.searchParams.set('utm_medium', customCm);
+        }
+
+        finalDlUrl = parsedUrl.toString();
         utmSource = parsedUrl.searchParams.get('utm_source') || '';
         utmMedium = parsedUrl.searchParams.get('utm_medium') || '';
         utmCampaign = parsedUrl.searchParams.get('utm_campaign') || '';
@@ -645,8 +712,8 @@ app.post('/run-task', (req, res) => {
           ul: 'zh-tw',
           _p: Math.floor(Math.random() * 1000000000).toString(),
           _et: engagementTimeMs.toString(),
-          dl: target.url,
-          dt: target.dt,
+          dl: finalDlUrl,
+          dt: target.name, // 使用 target.name 作為 dt (Document Title)
           en: 'page_view',
           cs: utmSource,
           cm: utmMedium,
