@@ -310,7 +310,7 @@ app.get('/', (req, res) => {
             
             <!-- Medium (cm) 切換選單 -->
             <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                <label style="font-size: 13px; color: #cbd5e1; font-weight: 600;">切換 Medium (cm / utm_medium):</label>
+                <label style="font-size: 13px; color: #cbd5e1; font-weight: 600;">切換店代號 (cm / utm_medium):</label>
                 <select id="cm-select" class="btn-secondary">
                   
                     <option value="W5009">W5009</option>
