@@ -685,41 +685,39 @@ app.get('/', (req, res) => {
 
                                 // 發送成功後更新當日記數
                                 await incrementDailyCount(item.index);
-                                  
-                                  var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
-                                  '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
-                                  '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>_fv:</b> ' + item.params._fv + '<br>' +
-                                  '<span style="padding-left: 20px;"><b>UTM 歸因:</b> source=' + (item.params.cs||'none') + ' | medium=' + (item.params.cm||'none') + ' | campaign=' + (item.params.cn||'none') + '</span><br>' +
-                                  '<span style="padding-left: 20px;"><b>Consent Mode:</b> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
-                                  '<span style="padding-left: 20px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
-                                  '<span style="padding-left: 20px;"><b>dl:</b> ' + item.params.dl + '</span>' +
-                                '</div>';
-                                
-                                logBox.innerHTML += '<span>[成功] ' + item.name + ' (' + item.params.cm + ')</span><br>';
+
+                                logBox.innerHTML += '<span>✅ [' + (i + 1) + '/' + data.items.length + '] ' + item.name + ' (cm=' + item.params.cm + ') 請求已送出</span><br>';
                             } catch (err) {
                                 if (err.name === 'AbortError') {
-                                    logBox.innerHTML += '<span class="log-warn">🛑 請求已被中斷。</span><br>';
-                                    break;
+                                    logBox.innerHTML += '<span class="log-warn">🛑 發送連線已手動中斷。</span><br>';
+                                } else {
+                                    logBox.innerHTML += '<span class="log-err">❌ [' + (i + 1) + '/' + data.items.length + '] ' + item.name + ' 發送失敗: ' + err.message + '</span><br>';
                                 }
-                                logBox.innerHTML += '<span class="log-err">[失敗] ' + item.name + ' - ' + err.message + '</span><br>';
                             }
 
                             logBox.scrollTop = logBox.scrollHeight;
 
-                            // 項目間微幅間隔，並可在間隔期間隨時被停止中斷
+                            // 各項目之間的發送間隔延遲 (1.5 秒)
                             if (i < data.items.length - 1 && !isStopped) {
-                                await interruptibleDelay(200);
+                                await interruptibleDelay(1500);
                             }
                         }
+
+                        if (!isStopped) {
+                            logBox.innerHTML += '<span class="log-info">✨ ' + runTag + ' 批次發送完成。</span><br>';
+                        }
+                    } else {
+                        logBox.innerHTML += '<span class="log-err">❌ 獲取任務資料失敗：' + (data.message || '未知錯誤') + '</span><br>';
                     }
                 } catch (err) {
                     if (err.name === 'AbortError') {
-                        logBox.innerHTML += '<span class="log-warn">🛑 任務已被取消。</span><br>';
+                        logBox.innerHTML += '<span class="log-warn">🛑 請求已取消。</span><br>';
                     } else {
-                        logBox.innerHTML += '<span class="log-err">任務執行失敗: ' + err.message + '</span><br>';
+                        logBox.innerHTML += '<span class="log-err">❌ 執行任務發生錯誤：' + err.message + '</span><br>';
                     }
                 } finally {
                     activeAbortController = null;
+                    logBox.scrollTop = logBox.scrollHeight;
                 }
             }
         </script>
@@ -729,5 +727,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(`GA4 Control Center running on http://localhost:${PORT}`);
 });
