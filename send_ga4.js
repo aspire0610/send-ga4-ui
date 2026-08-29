@@ -436,6 +436,13 @@ app.get('/', (req, res) => {
             var currentCancelDelay = null;
             var activeAbortController = null;
 
+            // 產生指定範圍 (ms) 的隨機延遲
+function randomDelay(minMs, maxMs) {
+    var delay = Math.floor(Math.random() * (maxMs - minMs + 1)) + minMs;
+    return interruptibleDelay(delay); // 沿用你現有的可打斷延遲
+}
+
+            
             async function loadDailyCounts() {
                 try {
                     var res = await fetch('/api/daily-counts');
@@ -663,6 +670,13 @@ app.get('/', (req, res) => {
 
                             var item = data.items[i];
 
+                            if (i > 0) {
+        var randomMs = Math.floor(Math.random() * (3000 - 1000 + 1)) + 1000; // 1000ms - 3000ms
+        updateStatus('⏳ 隨機延遲中 (' + (randomMs / 1000).toFixed(1) + ' 秒)...', '#f59e0b');
+        await interruptibleDelay(randomMs);
+        if (isStopped) break; // 延遲結束後檢查是否已被使用者按下停止
+    }
+
                             item.params.sid = Math.floor(Date.now() / 1000).toString();
                             item.params.sr = (window.screen && window.screen.width && window.screen.height) 
                               ? (window.screen.width + 'x' + window.screen.height) 
@@ -701,12 +715,12 @@ app.get('/', (req, res) => {
 
                             logBox.scrollTop = logBox.scrollHeight;
                             
-                            if (i < data.items.length - 1 && !isStopped) {
+                           if (i < data.items.length - 1 && !isStopped) {
     // 產生 5000 ~ 9999 毫秒 (約 5~10 秒) 的隨機延遲
     var delayMs = Math.floor(Math.random() * 5000) + 5000;
     
     // 使用可被中斷的延遲函式
-    await interruptibleDelay(1500);
+    await interruptibleDelay(delayMs);
 }
                             
                         }
@@ -735,5 +749,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`GA4 Control Center running on http://localhost:${PORT}`);
+  console.log(`🚀 伺服器已成功啟動在埠號 http://localhost:${PORT}`);
 });
