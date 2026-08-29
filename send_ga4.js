@@ -10,7 +10,6 @@ app.use(express.json());
 // 全域記憶體計數器邏輯 (跨設備同步)
 // ==========================================
 function getTaiwanDate() {
-  // 使用 sv-SE 格式確保穩定輸出 YYYY-MM-DD
   return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
 }
 
@@ -64,7 +63,6 @@ app.post('/run-task', (req, res) => {
 
     const urlObj = new URL(target.url);
 
-    // 1. 若前端有傳入新的 cm (utm_medium)，同步覆蓋 dl 網址內的 utm_medium 參數
     if (cm) {
       urlObj.searchParams.set('utm_medium', cm);
     }
@@ -73,7 +71,6 @@ app.post('/run-task', (req, res) => {
     const cn = urlObj.searchParams.get('utm_campaign') || 'none';
     const mediumParam = urlObj.searchParams.get('utm_medium') || 'W5009';
 
-    // 隨機產生 Client ID
     const cid = Math.floor(Math.random() * 1000000000) + '.' + Math.floor(Math.random() * 1000000000);
 
     return {
@@ -85,12 +82,12 @@ app.post('/run-task', (req, res) => {
         cid: cid,
         _fv: '1',
         gcs: 'G111',
-        gcd: '13p3p3p2p5',
+        gcd: '13r3r3i3i511',
         cs: cs,
         cm: mediumParam,
         cn: cn,
         dt: target.name,
-        dl: urlObj.toString(), // 2. 確保傳出的 dl 包含最新的 utm_medium
+        dl: urlObj.toString(),
         en: 'page_view'
       }
     };
@@ -340,27 +337,29 @@ app.get('/', (req, res) => {
                 border: 1px solid rgba(255, 255, 255, 0.08); 
                 border-radius: 10px; 
                 padding: 12px; 
-                height: 260px; 
+                height: 280px; 
                 overflow-y: auto; 
                 font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; 
                 font-size: 11px; 
-                color: #34d399; 
+                color: #94a3b8; 
                 line-height: 1.6; 
+                white-space: pre-wrap;
+                word-break: break-all;
             }
             .log-err { color: #f87171; }
             .log-info { color: #60a5fa; }
             .log-warn { color: #fbbf24; }
+            .log-success { color: #34d399; }
             #status-text { font-weight: 600; color: #38bdf8; width: 100%; margin-top: 4px; font-size: 14px; }
         </style>
     </head>
     <body>
         <div class="container">
             <div class="header-bar">
-                <h1>📡 GA4 選擇性發送控制台 (前端直連)</h1>
+                <h1>📡 GA4 發送控制台 (前端直連)</h1>
                 <div class="date-badge" id="current-date">--</div>
             </div>
             
-            <!-- Medium (cm) 切換選單 -->
             <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                 <label style="font-size: 13px; color: #cbd5e1; font-weight: 600;">切換店代號 (cm / utm_medium):</label>
                 <select id="cm-select" class="btn-secondary">
@@ -434,7 +433,7 @@ app.get('/', (req, res) => {
             var currentIpAddress = '未知 IP';
             var totalUrlCount = ${targetUrls.length};
             var currentCancelDelay = null;
-            var activeAbortController = null; // 用於強制切斷正在進行中的 Fetch HTTP 請求
+            var activeAbortController = null;
 
             async function loadDailyCounts() {
                 try {
@@ -497,7 +496,7 @@ app.get('/', (req, res) => {
             window.addEventListener('DOMContentLoaded', function() {
                 fetchCurrentIp();
                 loadDailyCounts();
-                setInterval(loadDailyCounts, 5000); // 跨設備同步更新頻率：5秒
+                setInterval(loadDailyCounts, 5000);
             });
 
             function toggleAll(status) {
@@ -511,7 +510,6 @@ app.get('/', (req, res) => {
                 if (color) el.style.color = color;
             }
 
-            // 可立即中斷的非同步等待
             function interruptibleDelay(ms) {
                 return new Promise(function(resolve) {
                     var timer = setTimeout(function() {
@@ -554,8 +552,8 @@ app.get('/', (req, res) => {
                 isStopped = true;
                 if (autoTimer) { clearTimeout(autoTimer); autoTimer = null; }
                 if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
-                if (currentCancelDelay) { currentCancelDelay(); } // 立即中斷等待中的延遲
-                if (activeAbortController) { activeAbortController.abort(); activeAbortController = null; } // 強制切斷發送中的 HTTP 請求
+                if (currentCancelDelay) { currentCancelDelay(); }
+                if (activeAbortController) { activeAbortController.abort(); activeAbortController = null; }
 
                 updateStatus('🛑 已停止發送', '#f87171');
                 document.getElementById('start-btn').style.display = 'inline-block';
@@ -569,7 +567,7 @@ app.get('/', (req, res) => {
                 
                 if (currentRunCount >= maxRuns) {
                     var logBox = document.getElementById('log-box');
-                    logBox.innerHTML += '<span class="log-warn">已達到設定的總重複次數 (' + maxRuns + ' 次)，自動停止任務。</span><br>';
+                    logBox.innerHTML += '<div class="log-warn">已達到設定的總重複次數 (' + maxRuns + ' 次)，自動停止任務。</div>';
                     logBox.scrollTop = logBox.scrollHeight;
                     stopAutoLoop();
                     return;
@@ -584,7 +582,7 @@ app.get('/', (req, res) => {
                 if (!isAuto || currentRunCount >= maxRuns) {
                     if (currentRunCount >= maxRuns && isAuto) {
                         var logBox = document.getElementById('log-box');
-                        logBox.innerHTML += '<span class="log-warn">已達到設定的總重複次數 (' + maxRuns + ' 次)，自動停止任務。</span><br>';
+                        logBox.innerHTML += '<div class="log-warn">已達到設定的總重複次數 (' + maxRuns + ' 次)，自動停止任務。</div>';
                         logBox.scrollTop = logBox.scrollHeight;
                     }
                     stopAutoLoop();
@@ -640,7 +638,6 @@ app.get('/', (req, res) => {
                 var selectedCm = document.getElementById('cm-select').value;
 
                 updateStatus('⏳ ' + runTag + ' 數據發送中...', '#f59e0b');
-                logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + ']' + runTag + ' 開始發送選中的 ' + selectedIndexes.length + ' 筆資料... (當前來源 IP: ' + currentIpAddress + ')</span><br>';
 
                 try {
                     activeAbortController = new AbortController();
@@ -658,9 +655,8 @@ app.get('/', (req, res) => {
 
                     if (data.success && data.items) {
                         for (var i = 0; i < data.items.length; i++) {
-                            // 每次發送單一項目時均進行狀態二次檢查，確保可以隨時按下停止並徹底終止發送
                             if (isStopped) {
-                                logBox.innerHTML += '<span class="log-warn">🛑 收到中斷請求，已停止後續發送。</span><br>';
+                                logBox.innerHTML += '<div class="log-warn">🛑 收到中斷請求，已停止後續發送。</div>';
                                 break;
                             }
 
@@ -676,44 +672,50 @@ app.get('/', (req, res) => {
 
                             try {
                                 activeAbortController = new AbortController();
-                                // 直連發送至 GA4
                                 await fetch(targetUrl, { 
                                     method: 'POST', 
                                     mode: 'no-cors',
                                     signal: activeAbortController.signal 
                                 });
 
-                                // 發送成功後更新當日記數
                                 await incrementDailyCount(item.index);
 
-                                logBox.innerHTML += '<span>✅ [' + (i + 1) + '/' + data.items.length + '] ' + item.name + ' (cm=' + item.params.cm + ') 請求已送出</span><br>';
+                                // 格式化為圖片風格的 Log
+                                var logHtml = '<div style="margin-bottom: 12px; font-family: monospace;">' +
+                                  '  <div>&nbsp;&nbsp;&nbsp;&nbsp;↳ <span style="color: #94a3b8;">[核心識別參數]</span> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>_fv:</b> ' + item.params._fv + '</div>' +
+                                  '  <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8;">UTM 歸因:</span> source=' + item.params.cs + ' | medium=' + item.params.cm + ' | campaign=' + item.params.cn + '</div>' +
+                                  '  <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8;">Consent Mode:</span> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</div>' +
+                                  '  <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>dt:</b> ' + item.params.dt + '</div>' +
+                                  '  <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b>dl:</b> ' + item.params.dl + '</div>' +
+                                  '</div>';
+
+                                logBox.innerHTML += logHtml;
                             } catch (err) {
                                 if (err.name === 'AbortError') {
-                                    logBox.innerHTML += '<span class="log-warn">🛑 發送連線已手動中斷。</span><br>';
+                                    logBox.innerHTML += '<div class="log-warn">🛑 發送連線已手動中斷。</div>';
                                 } else {
-                                    logBox.innerHTML += '<span class="log-err">❌ [' + (i + 1) + '/' + data.items.length + '] ' + item.name + ' 發送失敗: ' + err.message + '</span><br>';
+                                    logBox.innerHTML += '<div class="log-err">❌ [' + (i + 1) + '/' + data.items.length + '] ' + item.name + ' 發送失敗: ' + err.message + '</div>';
                                 }
                             }
 
                             logBox.scrollTop = logBox.scrollHeight;
 
-                            // 各項目之間的發送間隔延遲 (1.5 秒)
                             if (i < data.items.length - 1 && !isStopped) {
                                 await interruptibleDelay(1500);
                             }
                         }
 
                         if (!isStopped) {
-                            logBox.innerHTML += '<span class="log-info">✨ ' + runTag + ' 批次發送完成。</span><br>';
+                            logBox.innerHTML += '<div class="log-info" style="margin-top: 6px;">=== 本次任務執行完畢 ===</div><br>';
                         }
                     } else {
-                        logBox.innerHTML += '<span class="log-err">❌ 獲取任務資料失敗：' + (data.message || '未知錯誤') + '</span><br>';
+                        logBox.innerHTML += '<div class="log-err">❌ 獲取任務資料失敗：' + (data.message || '未知錯誤') + '</div>';
                     }
                 } catch (err) {
                     if (err.name === 'AbortError') {
-                        logBox.innerHTML += '<span class="log-warn">🛑 請求已取消。</span><br>';
+                        logBox.innerHTML += '<div class="log-warn">🛑 請求已取消。</div>';
                     } else {
-                        logBox.innerHTML += '<span class="log-err">❌ 執行任務發生錯誤：' + err.message + '</span><br>';
+                        logBox.innerHTML += '<div class="log-err">❌ 執行任務發生錯誤：' + err.message + '</div>';
                     }
                 } finally {
                     activeAbortController = null;
