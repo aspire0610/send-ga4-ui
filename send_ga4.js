@@ -51,6 +51,9 @@ app.post('/api/reset-counts', (req, res) => {
 // ==========================================
 // 補齊：後端任務處理 API (/run-task)
 // ==========================================
+// ==========================================
+// 修正版：後端任務處理 API (/run-task)
+// ==========================================
 app.post('/run-task', (req, res) => {
   const { indexes, cm } = req.body;
   
@@ -63,9 +66,15 @@ app.post('/run-task', (req, res) => {
     if (!target) return null;
 
     const urlObj = new URL(target.url);
+
+    // 1. 若前端有傳入新的 cm (utm_medium)，同步覆蓋 dl 網址內的 utm_medium 參數
+    if (cm) {
+      urlObj.searchParams.set('utm_medium', cm);
+    }
+
     const cs = urlObj.searchParams.get('utm_source') || 'warehouse';
     const cn = urlObj.searchParams.get('utm_campaign') || 'none';
-    const mediumParam = cm || urlObj.searchParams.get('utm_medium') || 'W5009';
+    const mediumParam = urlObj.searchParams.get('utm_medium') || 'W5009';
 
     // 隨機產生 Client ID
     const cid = Math.floor(Math.random() * 1000000000) + '.' + Math.floor(Math.random() * 1000000000);
@@ -84,7 +93,7 @@ app.post('/run-task', (req, res) => {
         cm: mediumParam,
         cn: cn,
         dt: target.name,
-        dl: target.url,
+        dl: urlObj.toString(), // 2. 確保傳出的 dl 包含最新的 utm_medium
         en: 'page_view'
       }
     };
