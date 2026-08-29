@@ -356,7 +356,7 @@ app.get('/', (req, res) => {
     <body>
         <div class="container">
             <div class="header-bar">
-                <h1>📡 GA4 發送控制台 (前端直連)</h1>
+                <h1>📡 發送控制台 (前端直連)</h1>
                 <div class="date-badge" id="current-date">--</div>
             </div>
             
