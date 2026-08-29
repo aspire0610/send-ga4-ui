@@ -10,7 +10,8 @@ app.use(express.json());
 // 全域記憶體計數器邏輯 (跨設備同步)
 // ==========================================
 function getTaiwanDate() {
-  return new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' });
+  // 使用 sv-SE 格式確保穩定輸出 YYYY-MM-DD
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Asia/Taipei' });
 }
 
 let dailyCounts = {}; 
@@ -45,6 +46,51 @@ app.post('/api/reset-counts', (req, res) => {
   checkAndResetDaily();
   dailyCounts = {};
   res.json({ success: true, counts: dailyCounts });
+});
+
+// ==========================================
+// 補齊：後端任務處理 API (/run-task)
+// ==========================================
+app.post('/run-task', (req, res) => {
+  const { indexes, cm } = req.body;
+  
+  if (!Array.isArray(indexes) || indexes.length === 0) {
+    return res.status(400).json({ success: false, message: '無效的 index 陣列' });
+  }
+
+  const items = indexes.map((idx) => {
+    const target = targetUrls[idx];
+    if (!target) return null;
+
+    const urlObj = new URL(target.url);
+    const cs = urlObj.searchParams.get('utm_source') || 'warehouse';
+    const cn = urlObj.searchParams.get('utm_campaign') || 'none';
+    const mediumParam = cm || urlObj.searchParams.get('utm_medium') || 'W5009';
+
+    // 隨機產生 Client ID
+    const cid = Math.floor(Math.random() * 1000000000) + '.' + Math.floor(Math.random() * 1000000000);
+
+    return {
+      index: idx,
+      name: target.name,
+      params: {
+        v: '2',
+        tid: MEASUREMENT_ID,
+        cid: cid,
+        _fv: '1',
+        gcs: 'G111',
+        gcd: '13p3p3p2p5',
+        cs: cs,
+        cm: mediumParam,
+        cn: cn,
+        dt: target.name,
+        dl: target.url,
+        en: 'page_view'
+      }
+    };
+  }).filter(Boolean);
+
+  res.json({ success: true, items });
 });
 // ==========================================
 
@@ -312,7 +358,6 @@ app.get('/', (req, res) => {
             <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                 <label style="font-size: 13px; color: #cbd5e1; font-weight: 600;">切換店代號 (cm / utm_medium):</label>
                 <select id="cm-select" class="btn-secondary">
-                  
                     <option value="W5009">W5009</option>
                     <option value="W5003">W5003</option>
                     <option value="W5010">W5010</option>
@@ -650,8 +695,6 @@ app.get('/', (req, res) => {
                         btn.innerText = '單次發送 / 啟動自動重複';
                         updateStatus('✅ 發送完畢', '#34d399');
                     }
-                    logBox.innerHTML += '<span class="log-info">=== 本次任務執行完畢 ===</span><br>';
-                    logBox.scrollTop = logBox.scrollHeight;
                 }
             }
         </script>
@@ -660,75 +703,6 @@ app.get('/', (req, res) => {
   `);
 });
 
-app.post('/run-task', (req, res) => {
-  try {
-    const selectedIndexes = (req.body && Array.isArray(req.body.indexes)) ? req.body.indexes : [];
-    const customCm = (req.body && req.body.cm) ? req.body.cm : 'DEFAULT';
-
-    if (selectedIndexes.length === 0) {
-      return res.status(400).json({ success: false, message: '未收到有效的選取索引。' });
-    }
-
-    const items = selectedIndexes.map(targetIndex => {
-      const target = targetUrls[targetIndex];
-      if (!target) return null;
-
-      const uniqueClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
-      const engagementTimeMs = Math.floor(Math.random() * 5000) + 10000;
-
-      let utmSource = '';
-      let utmMedium = '';
-      let utmCampaign = '';
-      let finalDlUrl = target.url;
-
-      try {
-        const parsedUrl = new URL(target.url);
-        
-        // 若下拉選單選擇了非預設值，覆寫 utm_medium
-        if (customCm !== 'DEFAULT') {
-          parsedUrl.searchParams.set('utm_medium', customCm);
-        }
-
-        finalDlUrl = parsedUrl.toString();
-        utmSource = parsedUrl.searchParams.get('utm_source') || '';
-        utmMedium = parsedUrl.searchParams.get('utm_medium') || '';
-        utmCampaign = parsedUrl.searchParams.get('utm_campaign') || '';
-      } catch (e) {}
-
-      return {
-        name: target.name,
-        params: {
-          v: '2',
-          tid: MEASUREMENT_ID,
-          gtm: '45je68e1v89223874',
-          gcs: 'G111',
-          gcd: '13r3r3I3I5l1',
-          cid: uniqueClientId,
-          sid: '',
-          sct: '1',
-          seg: '1',
-          _fv: '1',
-          _ss: '1',
-          _s: '1',
-          ul: 'zh-tw',
-          _p: Math.floor(Math.random() * 1000000000).toString(),
-          _et: engagementTimeMs.toString(),
-          dl: finalDlUrl,
-          dt: target.name, // 使用 target.name 作為 dt (Document Title)
-          en: 'page_view',
-          cs: utmSource,
-          cm: utmMedium,
-          cn: utmCampaign
-        }
-      };
-    }).filter(Boolean);
-
-    res.json({ success: true, items });
-  } catch (globalErr) {
-    res.status(500).json({ success: false, message: globalErr.message });
-  }
-});
-
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`UI 介面已啟動！請在瀏覽器開啟: http://localhost:${PORT}`);
+app.listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
 });
