@@ -685,7 +685,16 @@ app.get('/', (req, res) => {
 
                                 // 發送成功後更新當日記數
                                 await incrementDailyCount(item.index);
-
+                                  
+                                  var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
+                                  '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
+                                  '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>_fv:</b> ' + item.params._fv + '<br>' +
+                                  '<span style="padding-left: 20px;"><b>UTM 歸因:</b> source=' + (item.params.cs||'none') + ' | medium=' + (item.params.cm||'none') + ' | campaign=' + (item.params.cn||'none') + '</span><br>' +
+                                  '<span style="padding-left: 20px;"><b>Consent Mode:</b> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
+                                  '<span style="padding-left: 20px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
+                                  '<span style="padding-left: 20px;"><b>dl:</b> ' + item.params.dl + '</span>' +
+                                '</div>';
+                                
                                 logBox.innerHTML += '<span>[成功] ' + item.name + ' (' + item.params.cm + ')</span><br>';
                             } catch (err) {
                                 if (err.name === 'AbortError') {
