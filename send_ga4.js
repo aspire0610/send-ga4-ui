@@ -71,26 +71,31 @@ app.post('/run-task', (req, res) => {
     const cn = urlObj.searchParams.get('utm_campaign') || 'none';
     const mediumParam = urlObj.searchParams.get('utm_medium') || 'W5009';
 
-    const cid = Math.floor(Math.random() * 1000000000) + '.' + Math.floor(Math.random() * 1000000000);
+    // 修改前：
+// const cid = Math.floor(Math.random() * 1000000000) + '.' + Math.floor(Math.random() * 1000000000);
 
-    return {
-      index: idx,
-      name: target.name,
-      params: {
-        v: '2',
-        tid: MEASUREMENT_ID,
-        cid: cid,
-        _fv: '1',
-        gcs: 'G111',
-        gcd: '13r3r3i3i511',
-        cs: cs,
-        cm: mediumParam,
-        cn: cn,
-        dt: target.name,
-        dl: urlObj.toString(),
-        en: 'page_view'
-      }
-    };
+// 修改後：加入 Date.now() 確保 cid 的絕對唯一性
+const cid = Date.now() + '.' + Math.floor(Math.random() * 1000000000);
+
+return {
+  index: idx,
+  name: target.name,
+  params: {
+    v: '2',
+    tid: MEASUREMENT_ID,
+    cid: cid,
+    // _fv: '1',  👈 務必刪除或註解此行！不要強迫 GA4 帶入新用戶演算法
+    gcs: 'G111',
+    gcd: '13r3r3i3i511',
+    cs: cs,
+    cm: mediumParam,
+    cn: cn,
+    dt: target.name,
+    dl: urlObj.toString(),
+    en: 'page_view'
+  }
+};
+
   }).filter(Boolean);
 
   res.json({ success: true, items });
@@ -678,6 +683,8 @@ function randomDelay(minMs, maxMs) {
     }
 
                             item.params.sid = Math.floor(Date.now() / 1000).toString();
+                            item.params.seg = '1';//有效互動
+                            item.params.sct = '1';//有效工作階段
                             item.params.sr = (window.screen && window.screen.width && window.screen.height) 
                               ? (window.screen.width + 'x' + window.screen.height) 
                               : '1920x1080';
