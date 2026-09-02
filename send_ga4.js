@@ -703,8 +703,7 @@ function randomDelay(minMs, maxMs) {
                                 await incrementDailyCount(item.index);
 
                                 // 格式化為圖片風格的 Log
-                                // 前端 logHtml 樣板修正（補回 _fv 觀察）
-var logHtml = '<div style="margin-bottom: 12px; font-family: monospace;">' +
+                         var logHtml = '<div style="margin-bottom: 12px; font-family: monospace;">' +
   '  <div>&nbsp;&nbsp;&nbsp;&nbsp;↳ <span style="color: #94a3b8;">[核心識別參數]</span> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>_fv:</b> ' + item.params._fv + ' | <b>sct:</b> ' + item.params.sct + ' | <b>seg:</b> ' + item.params.seg + '</div>' +
   '  <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8;">UTM 歸因:</span> source=' + item.params.cs + ' | medium=' + item.params.cm + ' | campaign=' + item.params.cn + '</div>' +
   '  <div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color: #94a3b8;">Consent Mode:</span> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</div>' +
