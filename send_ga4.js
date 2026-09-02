@@ -84,7 +84,7 @@ return {
     v: '2',
     tid: MEASUREMENT_ID,
     cid: cid,
-    _fv: '1';
+    _fv: '1',
     gcs: 'G111',
     gcd: '13r3r3i3i511',
     cs: cs,
