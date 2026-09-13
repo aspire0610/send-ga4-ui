@@ -61,7 +61,7 @@ app.get('/', (req, res) => {
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Costco GA4 發送控制台-5018</title>
+        <title>Costco GA4 發送控制台</title>
         <style>
             * { box-sizing: border-box; }
             body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 10px; margin: 0; }
@@ -90,7 +90,7 @@ app.get('/', (req, res) => {
     </head>
     <body>
         <div class="container">
-            <h1>📊 GA4 選擇性發送控制台 (前端直連完整版)</h1>
+            <h1>📊 GA4 選擇性發送控制台 (5018)</h1>
             <p>請勾選要發送的目標連結：</p>
             
             <div class="actions">
