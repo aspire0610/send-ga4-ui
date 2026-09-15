@@ -103,6 +103,7 @@ app.get('/', (req, res) => {
             <div class="actions">
                 <button type="button" class="btn-secondary" onclick="toggleAll(true)">全選</button>
                 <button type="button" class="btn-secondary" onclick="toggleAll(false)">全不選</button>
+                <button type="button" class="btn-secondary" style="background: #ef4444; margin-left: auto;" onclick="resetCounts()">清空計數</button>
             </div>
 
             <div class="grid-box">
@@ -151,8 +152,9 @@ app.get('/', (req, res) => {
             var maxRuns = 1;
             var currentIpAddress = '未知 IP';
 
-            var totalSentCount = 0;
-            var itemSentCounts = {};
+            // 從 localStorage 初始化讀取計數紀錄
+            var totalSentCount = parseInt(localStorage.getItem('ga_total_sent_count') || '0', 10);
+            var itemSentCounts = JSON.parse(localStorage.getItem('ga_item_sent_counts') || '{}');
 
             async function fetchCurrentIp() {
                 var ipEl = document.getElementById('current-ip');
@@ -168,7 +170,18 @@ app.get('/', (req, res) => {
                 }
             }
 
-            window.addEventListener('DOMContentLoaded', fetchCurrentIp);
+            // 頁面載入時還原 IP 與歷史計數 UI
+            window.addEventListener('DOMContentLoaded', function() {
+                fetchCurrentIp();
+                
+                document.getElementById('total-sent-count').innerText = totalSentCount;
+                Object.keys(itemSentCounts).forEach(function(index) {
+                    var itemBadge = document.getElementById('item-count-' + index);
+                    if (itemBadge) {
+                        itemBadge.innerText = itemSentCounts[index] + ' 次';
+                    }
+                });
+            });
 
             function toggleAll(status) {
                 var checkboxes = document.querySelectorAll('input[name="urlIndex"]');
@@ -184,11 +197,25 @@ app.get('/', (req, res) => {
             function incrementCount(targetIndex) {
                 totalSentCount++;
                 document.getElementById('total-sent-count').innerText = totalSentCount;
+                localStorage.setItem('ga_total_sent_count', totalSentCount.toString());
 
                 itemSentCounts[targetIndex] = (itemSentCounts[targetIndex] || 0) + 1;
                 var itemBadge = document.getElementById('item-count-' + targetIndex);
                 if (itemBadge) {
                     itemBadge.innerText = itemSentCounts[targetIndex] + ' 次';
+                }
+                localStorage.setItem('ga_item_sent_counts', JSON.stringify(itemSentCounts));
+            }
+
+            function resetCounts() {
+                if (confirm('確定要清空歷史發送計數嗎？')) {
+                    localStorage.removeItem('ga_total_sent_count');
+                    localStorage.removeItem('ga_item_sent_counts');
+                    totalSentCount = 0;
+                    itemSentCounts = {};
+                    document.getElementById('total-sent-count').innerText = '0';
+                    var badges = document.querySelectorAll('.item-count-badge');
+                    badges.forEach(function(b) { b.innerText = '0 次'; });
                 }
             }
 
