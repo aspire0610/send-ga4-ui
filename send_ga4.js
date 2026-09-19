@@ -98,7 +98,7 @@ app.get('/', (req, res) => {
     </head>
     <body>
         <div class="container">
-            <h1>📊 GA4 選擇性發送控制台 (W5009)</h1>
+            <h1>📊 GA4 選擇性發送控制台 (009&018)</h1>
             <p>請勾選要發送的目標連結：</p>
             
             <div class="actions">
