@@ -499,7 +499,7 @@ app.get('/', (req, res) => {
             renderCounters(data);
 
             if (data.persisted === false) {
-              alert('計數已在目前伺服器重設，但無法寫入 JSON 檔；伺服器重啟後可能無法保留。');
+              alert('計數器已在目前伺服器紀錄，伺服器重啟後將重置。');
             }
           } catch (err) {
             alert(err.message);
