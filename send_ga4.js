@@ -655,7 +655,7 @@ app.get('/', (req, res) => {
                     var persisted = await incrementCount(selectedIndexes[i]);
 
                     if (!persisted) {
-                      logBox.innerHTML += '<span class="log-warn">計數已在目前伺服器共用，但無法寫入 JSON 檔；伺服器重啟後可能無法保留。</span><br>';
+                      logBox.innerHTML += '<span class="log-warn">計數器已在目前伺服器紀錄，伺服器重啟後將重置。</span><br>';
                     }
                   } catch (countErr) {
                     logBox.innerHTML += '<span class="log-warn">全域計數更新失敗: ' +
