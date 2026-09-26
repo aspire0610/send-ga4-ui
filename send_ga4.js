@@ -7,7 +7,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 const targetUrls = [
-  { name: '花櫃', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Flowers-Plant/c/121307?utm_source=warehouse&utm_medium=W5009&utm_campaign=posm-flowers' },
+    { name: '花櫃', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Flowers-Plant/c/121307?utm_source=warehouse&utm_medium=W5009&utm_campaign=posm-flowers' },
   { name: '珠寶櫃', url: 'https://www.costco.com.tw/Jewelry-Gold/Jewelry-Buying-guide/Jewelry-Gold/c/CL10?utm_source=warehouse&utm_medium=W5009&utm_campaign=posm-jewelry' },
   { name: 'Rollout 家具海報', url: 'https://www.costco.com.tw/content/showroom?utm_source=warehouse&utm_medium=W5009&utm_campaign=Poster-FurnitureRollOut' },
   { name: 'Rollout Lsign', url: 'https://www.costco.com.tw/content/showroom?utm_source=warehouse&utm_medium=W5009&utm_campaign=Lsign-FurnitureRollOut' },
@@ -29,35 +29,49 @@ const targetUrls = [
   { name: 'ENDCAP', url: 'https://www.costco.com.tw/c/OnlineExclusive?utm_source=warehouse&utm_medium=W5009&utm_campaign=Endcap-OnlineEX' },
   { name: '靜電貼紙 同價', url: 'https://www.costco.com.tw/Same-Price/c/hero-sameprice?utm_source=warehouse&utm_medium=W5009&utm_campaign=Sticker-SamePrice' },
   { name: 'M / L Sign 同價', url: 'https://www.costco.com.tw/Same-Price/c/hero-sameprice?utm_source=warehouse&utm_medium=W5009&utm_campaign=Sign-SamePrice' },
-  //以下為w5018
-  
-  { name: '----以下為W5018----', },
-  { name: 'Lsign 通用', url: 'https://www.costco.com.tw/c/OnlineExclusive?utm_source=warehouse&utm_medium=W5018&utm_campaign=Lsign-OnlineExclusive' },
-  { name: 'Lsign 家電', url: 'https://www.costco.com.tw/Televisions-Appliances/Large-Appliances/c/301?utm_source=warehouse&utm_medium=W5018&utm_campaign=Lsign-Appliances' },
-  { name: 'Lsign HABA', url: 'https://www.costco.com.tw/Health-Beauty/Personal-Care/c/801?utm_source=warehouse&utm_medium=W5018&utm_campaign=Lsign-D20' },
-  { name: 'Lsign 五金', url: 'https://www.costco.com.tw/Furniture-Kitchen/Hardware-DIY/c/605?utm_source=warehouse&utm_medium=W5018&utm_campaign=Lsign-D23' },
-  { name: 'Lsign 床墊', url: 'https://www.costco.com.tw/Furniture-Kitchen/Bedding/Mattress-Toppers/c/60205?utm_source=warehouse&utm_medium=W5018&utm_campaign=Lsign-Mattress' },
-  { name: 'Lsign 儲藏屋', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Outdoor-Storage/c/40201?utm_source=warehouse&utm_medium=W5018&utm_campaign=Lsign-D27' },
-  { name: 'M / L Sign 同價', url: 'https://www.costco.com.tw/Same-Price/c/hero-sameprice?utm_source=warehouse&utm_medium=W5018&utm_campaign=Sign-SamePrice' },
- 
- 
-  
+  { name: 'fy26p8 Minispotlight 週期購', url: 'https://www.costco.com.tw/content/subscription?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26p8_Minispotlight_Subscription' },
+  { name: 'fy26p8 Minispotlight Costco APP', url: 'https://www.costco.com.tw/costco-app?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26p8_Minispotlight_CostcoApp' },
+  { name: 'fy26 p10 app poster iOS', url: 'https://www.costco.com.tw/content/costco-app-ios?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_app_poster_iOS' },
+  { name: 'fy26 p10 app poster Android', url: 'https://www.costco.com.tw/content/costco-app-ios?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_app_poster_Android' },
+  { name: 'fy26 p10 minispotlight iOS', url: 'https://www.costco.com.tw/content/costco-app-ios?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_mini_spotlight_iOS' },
+  { name: 'fy26 p10 minispotlight Android', url: 'https://www.costco.com.tw/content/costco-app-ios?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_mini_spotlight_Android' },
+  { name: 'fy26p10w4 EM', url: 'https://www.costco.com.tw/executive-rewards?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26p_10w4_EM' },
+  { name: 'fy26p10w4 D27', url: 'https://www.costco.com.tw/Lawn-Garden/Patio-Furniture/Outdoor-Patio-Furniture/c/40102?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p10_banner_d27' },
+  { name: 'fy26p12w3 Showroom 1', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Sofas-Sectionals/c/50202?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p12_Showroom_Sofas' },
+  { name: 'fy26p12w3 Showroom 2', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Cabinets-Tables/c/50407?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p12_Showroom_Cabinets' },
+  { name: 'fy26p12w3 Showroom 3', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Dining-Sets/c/50301?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p12_Showroom_DiningSets' },
+  { name: 'fy26p12w3 Showroom 4', url: 'https://www.costco.com.tw/Furniture-Kitchen/Furniture/Computer-Desk-Chair-Sets/c/50602?utm_source=warehouse&utm_medium=W5009&utm_campaign=fy26_p12_Showroom_ComputerDeskChair' }
 ];
 
 const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
+const UTM_MEDIUM_OPTIONS = [
+  'W5003', 'W5009', 'W5010', 'W5011', 'W872', 'W874', 'W886',
+  'W5001', 'W5002', 'W5007', 'W5008', 'W5018', 'W870', 'W5020'
+];
 
 app.get('/', (req, res) => {
-  const checkboxesHtml = targetUrls.map((item, index) => `
-    <div style="margin-bottom: 10px;">
-      <label style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; color: #cbd5e1; font-size: 15px; padding: 4px 0;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <input type="checkbox" name="urlIndex" value="${index}" checked style="width: 20px; height: 20px; accent-color: #38bdf8;">
-          <span><b>${index + 1}.</b> ${item.name}</span>
-        </div>
-        <span class="item-count-badge" id="item-count-${index}">0 次</span>
-      </label>
-    </div>
-  `).join('');
+  const checkboxesHtml = targetUrls.map((item, index) => {
+    // 沒有 URL 的項目只作為群組標題，不提供勾選，避免送出無效事件。
+    if (!item.url) {
+      return `<div class="list-section-heading">${item.name.replace(/^-+|-+$/g, '')}</div>`;
+    }
+
+    return `
+      <div style="margin-bottom: 10px;">
+        <label style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; color: #cbd5e1; font-size: 15px; padding: 4px 0;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <input type="checkbox" name="urlIndex" value="${index}" checked style="width: 20px; height: 20px; accent-color: #38bdf8;">
+            <span><b>${index + 1}.</b> ${item.name}</span>
+          </div>
+          <span class="item-count-badge" id="item-count-${index}">0 次</span>
+        </label>
+      </div>
+    `;
+  }).join('');
+
+  const utmMediumOptionsHtml = UTM_MEDIUM_OPTIONS.map(value =>
+    `<option value="${value}"${value === 'W5009' ? ' selected' : ''}>${value}</option>`
+  ).join('');
 
   res.send(`
     <!DOCTYPE html>
@@ -84,11 +98,12 @@ app.get('/', (req, res) => {
             .auto-panel { background: #0f172a; border: 1px solid #334155; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
             .auto-panel label { color: #cbd5e1; font-size: 14px; display: flex; align-items: center; gap: 6px; }
             .auto-panel input[type="number"] { background: #1e293b; border: 1px solid #475569; color: white; padding: 6px 10px; border-radius: 6px; width: 80px; font-size: 14px; }
+            .medium-control { display: flex; align-items: center; gap: 8px; color: #cbd5e1; font-size: 14px; }
+            #utm-medium-select { background: #1e293b; border: 1px solid #38bdf8; color: #f8fafc; padding: 7px 10px; border-radius: 6px; font-size: 14px; font-weight: bold; }
+            .list-section-heading { grid-column: 1 / -1; color: #38bdf8; font-size: 13px; font-weight: bold; border-bottom: 1px solid #334155; padding: 5px 0 7px; margin-top: 3px; }
             .ip-box { background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; }
-            
             .total-count-box { background: #0284c7; color: white; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 6px; }
             .item-count-badge { background: #334155; color: #38bdf8; font-size: 12px; font-weight: bold; padding: 2px 8px; border-radius: 12px; border: 1px solid #475569; margin-left: 8px; flex-shrink: 0; }
-
             #log-box { background: #090d16; border: 1px solid #334155; border-radius: 8px; padding: 15px; height: 280px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #34d399; line-height: 1.5; }
             .log-err { color: #f87171; }
             .log-info { color: #60a5fa; }
@@ -98,9 +113,9 @@ app.get('/', (req, res) => {
     </head>
     <body>
         <div class="container">
-            <h1>📊 GA4 選擇性發送控制台 (009&018)</h1>
+            <h1>📊 GA4 選擇性發送控制台</h1>
             <p>請勾選要發送的目標連結：</p>
-            
+
             <div class="actions">
                 <button type="button" class="btn-secondary" onclick="toggleAll(true)">全選</button>
                 <button type="button" class="btn-secondary" onclick="toggleAll(false)">全不選</button>
@@ -112,27 +127,37 @@ app.get('/', (req, res) => {
             </div>
 
             <div class="auto-panel">
+                <label class="medium-control" for="utm-medium-select">
+                    GA4 utm_medium:
+                    <select id="utm-medium-select">${utmMediumOptionsHtml}</select>
+                </label>
+
                 <div class="ip-box">
                     <span>🌐 當前裝置 IP:</span>
                     <span id="current-ip">抓取中...</span>
                     <button type="button" class="btn-secondary" style="padding: 2px 8px; font-size: 11px;" onclick="fetchCurrentIp()">重新整理</button>
                 </div>
+
                 <div class="total-count-box">
                     <span>🚀 累積成功送出:</span>
                     <span id="total-sent-count">0</span> 次
                 </div>
+
                 <label>
                     <input type="checkbox" id="auto-repeat-chk" style="width: 16px; height: 16px;">
                     啟用自動重複發送
                 </label>
+
                 <label>
-                    間隔 (秒): 
+                    間隔 (秒):
                     <input type="number" id="interval-sec" value="60" min="10">
                 </label>
+
                 <label>
-                    重複次數: 
+                    重複次數:
                     <input type="number" id="repeat-count" value="5" min="1">
                 </label>
+
                 <div id="status-text"></div>
             </div>
 
@@ -140,7 +165,7 @@ app.get('/', (req, res) => {
                 <button type="button" id="start-btn" onclick="handleStart()">單次發送 / 啟動自動重複</button>
                 <button type="button" id="stop-btn" class="btn-stop" style="display: none;" onclick="stopAutoLoop()">停止自動發送</button>
             </div>
-            
+
             <h3 style="font-size: 14px; margin: 15px 0 8px 0; color: #cbd5e1;">即時執行日誌 (包含傳送參數)：</h3>
             <div id="log-box">等待開始執行...</div>
         </div>
@@ -171,11 +196,25 @@ app.get('/', (req, res) => {
                 }
             }
 
-            // 頁面載入時還原 IP 與歷史計數 UI
+            // 頁面載入時還原 IP、medium 與歷史計數 UI
             window.addEventListener('DOMContentLoaded', function() {
                 fetchCurrentIp();
-                
+
+                var mediumSelect = document.getElementById('utm-medium-select');
+                var savedMedium = localStorage.getItem('ga_selected_utm_medium');
+
+                if (savedMedium && Array.from(mediumSelect.options).some(function(option) {
+                    return option.value === savedMedium;
+                })) {
+                    mediumSelect.value = savedMedium;
+                }
+
+                mediumSelect.addEventListener('change', function() {
+                    localStorage.setItem('ga_selected_utm_medium', mediumSelect.value);
+                });
+
                 document.getElementById('total-sent-count').innerText = totalSentCount;
+
                 Object.keys(itemSentCounts).forEach(function(index) {
                     var itemBadge = document.getElementById('item-count-' + index);
                     if (itemBadge) {
@@ -186,7 +225,9 @@ app.get('/', (req, res) => {
 
             function toggleAll(status) {
                 var checkboxes = document.querySelectorAll('input[name="urlIndex"]');
-                checkboxes.forEach(function(cb) { cb.checked = status; });
+                checkboxes.forEach(function(cb) {
+                    cb.checked = status;
+                });
             }
 
             function updateStatus(msg, color) {
@@ -201,10 +242,12 @@ app.get('/', (req, res) => {
                 localStorage.setItem('ga_total_sent_count', totalSentCount.toString());
 
                 itemSentCounts[targetIndex] = (itemSentCounts[targetIndex] || 0) + 1;
+
                 var itemBadge = document.getElementById('item-count-' + targetIndex);
                 if (itemBadge) {
                     itemBadge.innerText = itemSentCounts[targetIndex] + ' 次';
                 }
+
                 localStorage.setItem('ga_item_sent_counts', JSON.stringify(itemSentCounts));
             }
 
@@ -212,18 +255,23 @@ app.get('/', (req, res) => {
                 if (confirm('確定要清空歷史發送計數嗎？')) {
                     localStorage.removeItem('ga_total_sent_count');
                     localStorage.removeItem('ga_item_sent_counts');
+
                     totalSentCount = 0;
                     itemSentCounts = {};
+
                     document.getElementById('total-sent-count').innerText = '0';
+
                     var badges = document.querySelectorAll('.item-count-badge');
-                    badges.forEach(function(b) { b.innerText = '0 次'; });
+                    badges.forEach(function(b) {
+                        b.innerText = '0 次';
+                    });
                 }
             }
 
             function handleStart() {
                 isStopped = false;
                 var isAuto = document.getElementById('auto-repeat-chk').checked;
-                
+
                 if (isAuto) {
                     maxRuns = parseInt(document.getElementById('repeat-count').value, 10) || 1;
                     currentRunCount = 0;
@@ -252,30 +300,37 @@ app.get('/', (req, res) => {
             async function startNextLoop() {
                 if (isStopped) return;
                 currentRunCount++;
-                
+
                 await executeTask();
-                
+
                 if (isStopped) return;
 
                 var isAuto = document.getElementById('auto-repeat-chk').checked;
+
                 if (!isAuto || currentRunCount >= maxRuns) {
                     if (currentRunCount >= maxRuns && isAuto) {
                         var logBox = document.getElementById('log-box');
                         logBox.innerHTML += '<span class="log-warn">已達到設定的總重複次數 (' + maxRuns + ' 次)，自動停止任務。</span><br>';
                         logBox.scrollTop = logBox.scrollHeight;
                     }
+
                     stopAutoLoop();
                     return;
                 }
 
                 var sec = parseInt(document.getElementById('interval-sec').value, 10) || 60;
                 var remaining = sec;
-                
+
                 updateStatus('⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' + remaining + ' 秒', '#38bdf8');
 
                 countdownTimer = setInterval(function() {
-                    if (isStopped) { clearInterval(countdownTimer); return; }
+                    if (isStopped) {
+                        clearInterval(countdownTimer);
+                        return;
+                    }
+
                     remaining--;
+
                     if (remaining > 0) {
                         updateStatus('⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' + remaining + ' 秒', '#38bdf8');
                     } else {
@@ -290,13 +345,15 @@ app.get('/', (req, res) => {
 
             async function executeTask() {
                 if (isStopped) return;
-                
+
                 var btn = document.getElementById('start-btn');
                 var logBox = document.getElementById('log-box');
-                
+
                 var checkboxes = document.querySelectorAll('input[name="urlIndex"]:checked');
                 var selectedIndexes = [];
-                checkboxes.forEach(function(cb) { selectedIndexes.push(parseInt(cb.value, 10)); });
+                checkboxes.forEach(function(cb) {
+                    selectedIndexes.push(parseInt(cb.value, 10));
+                });
 
                 if (selectedIndexes.length === 0) {
                     alert('請至少勾選一個連結！');
@@ -307,7 +364,7 @@ app.get('/', (req, res) => {
                 btn.disabled = true;
                 var isAuto = document.getElementById('auto-repeat-chk').checked;
                 var runTag = isAuto ? ' [第 ' + currentRunCount + '/' + maxRuns + ' 輪]' : '';
-                
+
                 await fetchCurrentIp();
 
                 updateStatus('⏳ ' + runTag + ' 數據發送中...', '#f59e0b');
@@ -317,9 +374,12 @@ app.get('/', (req, res) => {
                     var res = await fetch('/run-task', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ indexes: selectedIndexes })
+                        body: JSON.stringify({
+                            indexes: selectedIndexes,
+                            utmMedium: document.getElementById('utm-medium-select').value
+                        })
                     });
-                    
+
                     var data = await res.json();
 
                     if (data.success && data.items) {
@@ -329,9 +389,9 @@ app.get('/', (req, res) => {
                             var item = data.items[i];
 
                             item.params.sid = Math.floor(Date.now() / 1000).toString();
-                            item.params.sr = (window.screen && window.screen.width && window.screen.height) 
-                              ? (window.screen.width + 'x' + window.screen.height) 
-                              : '1920x1080';
+                            item.params.sr = (window.screen && window.screen.width && window.screen.height)
+                                ? (window.screen.width + 'x' + window.screen.height)
+                                : '1920x1080';
 
                             var queryParams = new URLSearchParams(item.params).toString();
                             var targetUrl = 'https://www.google-analytics.com/g/collect?' + queryParams;
@@ -342,13 +402,13 @@ app.get('/', (req, res) => {
                                 incrementCount(selectedIndexes[i]);
 
                                 var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
-                                  '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
-                                  '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>_fv:</b> ' + item.params._fv + '<br>' +
-                                  '<span style="padding-left: 80px;"><b>UTM 歸因:</b> source=' + (item.params.cs||'none') + ' | medium=' + (item.params.cm||'none') + ' | campaign=' + (item.params.cn||'none') + '</span><br>' +
-                                  '<span style="padding-left: 80px;"><b>Consent Mode:</b> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
-                                  '<span style="padding-left: 80px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
-                                  '<span style="padding-left: 80px;"><b>dl:</b> ' + item.params.dl + '</span>' +
-                                '</div>';
+                                    '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
+                                    '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>_fv:</b> ' + item.params._fv + '<br>' +
+                                    '<span style="padding-left: 80px;"><b>UTM 歸因:</b> source=' + (item.params.cs || 'none') + ' | medium=' + (item.params.cm || 'none') + ' | campaign=' + (item.params.cn || 'none') + '</span><br>' +
+                                    '<span style="padding-left: 80px;"><b>Consent Mode:</b> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
+                                    '<span style="padding-left: 80px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
+                                    '<span style="padding-left: 80px;"><b>dl:</b> ' + item.params.dl + '</span>' +
+                                    '</div>';
 
                                 logBox.innerHTML += '<span style="color: #34d399;">[成功] (' + (i + 1) + '/' + data.items.length + ') ' + item.name + ' 已送達</span><br>' + paramLogHtml;
                             } catch (sendErr) {
@@ -359,7 +419,9 @@ app.get('/', (req, res) => {
 
                             if (i < data.items.length - 1) {
                                 var delayMs = Math.floor(Math.random() * 5000) + 5000;
-                                await new Promise(function(resolve) { setTimeout(resolve, delayMs); });
+                                await new Promise(function(resolve) {
+                                    setTimeout(resolve, delayMs);
+                                });
                             }
                         }
                     }
@@ -371,6 +433,7 @@ app.get('/', (req, res) => {
                         btn.innerText = '單次發送 / 啟動自動重複';
                         updateStatus('✅ 發送完畢', '#34d399');
                     }
+
                     logBox.innerHTML += '<span class="log-info">=== 本次任務執行完畢 ===</span><br>';
                     logBox.scrollTop = logBox.scrollHeight;
                 }
@@ -384,6 +447,13 @@ app.get('/', (req, res) => {
 app.post('/run-task', (req, res) => {
   try {
     const selectedIndexes = (req.body && Array.isArray(req.body.indexes)) ? req.body.indexes : [];
+    const requestedUtmMedium = req.body && req.body.utmMedium !== undefined
+      ? req.body.utmMedium
+      : 'W5009';
+
+    if (typeof requestedUtmMedium !== 'string' || !UTM_MEDIUM_OPTIONS.includes(requestedUtmMedium)) {
+      return res.status(400).json({ success: false, message: '收到未允許的 utm_medium。' });
+    }
 
     if (selectedIndexes.length === 0) {
       return res.status(400).json({ success: false, message: '未收到有效的選取索引。' });
@@ -393,19 +463,24 @@ app.post('/run-task', (req, res) => {
       const target = targetUrls[targetIndex];
       if (!target) return null;
 
-      const uniqueClientId = Math.floor(Math.random() * 899999999 + 100000000) + '.' + Math.floor(Math.random() * 899999999 + 100000000);
+      const uniqueClientId =
+        Math.floor(Math.random() * 899999999 + 100000000) + '.' +
+        Math.floor(Math.random() * 899999999 + 100000000);
+
       const engagementTimeMs = Math.floor(Math.random() * 5000) + 10000;
 
       let utmSource = '';
-      let utmMedium = '';
       let utmCampaign = '';
+      let targetUrl = target.url;
 
       try {
         const parsedUrl = new URL(target.url);
+        parsedUrl.searchParams.set('utm_medium', requestedUtmMedium);
+        targetUrl = parsedUrl.toString();
         utmSource = parsedUrl.searchParams.get('utm_source') || '';
-        utmMedium = parsedUrl.searchParams.get('utm_medium') || '';
         utmCampaign = parsedUrl.searchParams.get('utm_campaign') || '';
       } catch (e) {
+        // 保留原有錯誤處理方式
       }
 
       return {
@@ -426,12 +501,11 @@ app.post('/run-task', (req, res) => {
           ul: 'zh-tw',
           _p: Math.floor(Math.random() * 1000000000).toString(),
           _et: engagementTimeMs.toString(),
-          dl: target.url,
+          dl: targetUrl,
           dt: target.name,
           en: 'page_view',
-
           cs: utmSource,
-          cm: utmMedium,
+          cm: requestedUtmMedium,
           cn: utmCampaign
         }
       };
