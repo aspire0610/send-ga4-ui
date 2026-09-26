@@ -1,9 +1,10 @@
 const express = require('express');
-const app = express();
+const fs = require('fs');
+const path = require('path');
 
+const app = express();
 const PORT = process.env.PORT || 3000;
 
-// 解析 JSON Body
 app.use(express.json());
 
 const targetUrls = [
@@ -44,32 +45,54 @@ const targetUrls = [
 ];
 
 const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
+
 const UTM_MEDIUM_OPTIONS = [
   'W5003', 'W5009', 'W5010', 'W5011', 'W872', 'W874', 'W886',
   'W5001', 'W5002', 'W5007', 'W5008', 'W5018', 'W870', 'W5020'
 ];
 
+const COUNTER_FILE = path.join(__dirname, 'ga4-counter-data.json');
+
+function loadCounters() {
+  try {
+    const saved = JSON.parse(fs.readFileSync(COUNTER_FILE, 'utf8'));
+    return {
+      total: Number.isInteger(saved.total) && saved.total >= 0 ? saved.total : 0,
+      items: saved.items && typeof saved.items === 'object' ? saved.items : {}
+    };
+  } catch (err) {
+    return { total: 0, items: {} };
+  }
+}
+
+let globalCounters = loadCounters();
+
+function saveCounters() {
+  const tempFile = COUNTER_FILE + '.tmp';
+  fs.writeFileSync(tempFile, JSON.stringify(globalCounters, null, 2), 'utf8');
+  fs.renameSync(tempFile, COUNTER_FILE);
+}
+
 app.get('/', (req, res) => {
   const checkboxesHtml = targetUrls.map((item, index) => {
-    // 沒有 URL 的項目只作為群組標題，不提供勾選，避免送出無效事件。
     if (!item.url) {
-      return `<div class="list-section-heading">${item.name.replace(/^-+|-+$/g, '')}</div>`;
+      return `<div class="section-heading">${item.name.replace(/^-+|-+$/g, '')}</div>`;
     }
 
     return `
-      <div style="margin-bottom: 10px;">
-        <label style="cursor: pointer; display: flex; align-items: center; justify-content: space-between; color: #cbd5e1; font-size: 15px; padding: 4px 0;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <input type="checkbox" name="urlIndex" value="${index}" checked style="width: 20px; height: 20px; accent-color: #38bdf8;">
+      <div class="url-option">
+        <label class="url-label">
+          <span class="url-name">
+            <input class="url-check" type="checkbox" name="urlIndex" value="${index}" checked>
             <span><b>${index + 1}.</b> ${item.name}</span>
-          </div>
+          </span>
           <span class="item-count-badge" id="item-count-${index}">0 次</span>
         </label>
       </div>
     `;
   }).join('');
 
-  const utmMediumOptionsHtml = UTM_MEDIUM_OPTIONS.map(value =>
+  const mediumOptionsHtml = UTM_MEDIUM_OPTIONS.map(value =>
     `<option value="${value}"${value === 'W5009' ? ' selected' : ''}>${value}</option>`
   ).join('');
 
@@ -77,368 +100,538 @@ app.get('/', (req, res) => {
     <!DOCTYPE html>
     <html lang="zh-TW">
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Costco GA4 發送控制台</title>
-        <style>
-            * { box-sizing: border-box; }
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; padding: 10px; margin: 0; }
-            .container { max-width: 900px; margin: 0 auto; background: #1e293b; padding: 15px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); }
-            @media (min-width: 768px) { body { padding: 20px; } .container { padding: 25px; } }
-            h1 { font-size: 20px; margin-bottom: 5px; color: #38bdf8; }
-            p { color: #94a3b8; margin-bottom: 15px; font-size: 13px; }
-            .actions { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
-            button { background: #0284c7; color: white; border: none; padding: 12px 20px; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
-            button:hover { background: #0369a1; }
-            button:disabled { background: #475569; cursor: not-allowed; }
-            .btn-secondary { background: #334155; font-size: 14px; padding: 10px 16px; width: auto; }
-            .btn-stop { background: #dc2626; }
-            .grid-box { display: grid; grid-template-columns: 1fr; gap: 5px; max-height: 320px; overflow-y: auto; background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155; margin-bottom: 15px; }
-            @media (min-width: 768px) { .grid-box { grid-template-columns: 1fr 1fr; gap: 10px; max-height: 280px; padding: 15px; } }
-            .auto-panel { background: #0f172a; border: 1px solid #334155; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
-            .auto-panel label { color: #cbd5e1; font-size: 14px; display: flex; align-items: center; gap: 6px; }
-            .auto-panel input[type="number"] { background: #1e293b; border: 1px solid #475569; color: white; padding: 6px 10px; border-radius: 6px; width: 80px; font-size: 14px; }
-            .medium-control { display: flex; align-items: center; gap: 8px; color: #cbd5e1; font-size: 14px; }
-            #utm-medium-select { background: #1e293b; border: 1px solid #38bdf8; color: #f8fafc; padding: 7px 10px; border-radius: 6px; font-size: 14px; font-weight: bold; }
-            .list-section-heading { grid-column: 1 / -1; color: #38bdf8; font-size: 13px; font-weight: bold; border-bottom: 1px solid #334155; padding: 5px 0 7px; margin-top: 3px; }
-            .ip-box { background: #1e293b; border: 1px solid #38bdf8; color: #38bdf8; padding: 6px 12px; border-radius: 6px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 8px; }
-            .total-count-box { background: #0284c7; color: white; padding: 6px 14px; border-radius: 6px; font-weight: bold; font-size: 14px; display: flex; align-items: center; gap: 6px; }
-            .item-count-badge { background: #334155; color: #38bdf8; font-size: 12px; font-weight: bold; padding: 2px 8px; border-radius: 12px; border: 1px solid #475569; margin-left: 8px; flex-shrink: 0; }
-            #log-box { background: #090d16; border: 1px solid #334155; border-radius: 8px; padding: 15px; height: 280px; overflow-y: auto; font-family: monospace; font-size: 12px; color: #34d399; line-height: 1.5; }
-            .log-err { color: #f87171; }
-            .log-info { color: #60a5fa; }
-            .log-warn { color: #fbbf24; }
-            #status-text { font-weight: bold; color: #38bdf8; width: 100%; margin-top: 5px; font-size: 15px; }
-        </style>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+      <title>Costco GA4 發送控制台</title>
+      <style>
+        :root {
+          color-scheme: light;
+          --ink: #172033;
+          --muted: #667085;
+          --blue: #087cff;
+        }
+        * { box-sizing: border-box; }
+        body {
+          min-height: 100vh;
+          margin: 0;
+          padding: 28px 16px;
+          color: var(--ink);
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+          background:
+            radial-gradient(ellipse at 12% 8%, rgba(160,205,255,.55), transparent 34%),
+            radial-gradient(ellipse at 90% 16%, rgba(222,197,255,.50), transparent 32%),
+            linear-gradient(145deg, #edf5ff, #f5f4fb 48%, #eef4fb);
+        }
+        body::before {
+          content: "";
+          position: fixed;
+          width: 290px;
+          height: 290px;
+          left: -100px;
+          bottom: -120px;
+          border-radius: 50%;
+          background: rgba(140,196,255,.32);
+          filter: blur(60px);
+          pointer-events: none;
+        }
+        .container {
+          position: relative;
+          max-width: 980px;
+          margin: 0 auto;
+          padding: 28px;
+          border: 1px solid rgba(255,255,255,.76);
+          border-radius: 28px;
+          background: rgba(255,255,255,.68);
+          backdrop-filter: saturate(170%) blur(28px);
+          -webkit-backdrop-filter: saturate(170%) blur(28px);
+          box-shadow: 0 24px 70px rgba(40,65,105,.14), inset 0 1px 0 rgba(255,255,255,.9);
+        }
+        h1 {
+          margin: 0 0 5px;
+          color: #162b49;
+          font-size: clamp(22px, 4vw, 29px);
+          letter-spacing: -.035em;
+        }
+        p { color: var(--muted); font-size: 14px; }
+        button {
+          padding: 12px 20px;
+          border: 1px solid rgba(255,255,255,.72);
+          border-radius: 15px;
+          color: white;
+          background: linear-gradient(180deg, #248aff, #0874ef);
+          box-shadow: 0 7px 18px rgba(0,112,235,.22), inset 0 1px 0 rgba(255,255,255,.35);
+          font-size: 15px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: .18s ease;
+        }
+        button:hover { transform: translateY(-1px); filter: brightness(1.04); }
+        button:disabled { background: #a7b4c5; box-shadow: none; cursor: not-allowed; }
+        .actions, .main-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+        .actions { margin: 20px 0 14px; }
+        .btn-secondary {
+          padding: 10px 16px;
+          color: #30415c;
+          background: rgba(255,255,255,.68);
+          border-color: rgba(255,255,255,.88);
+          box-shadow: 0 4px 14px rgba(40,60,90,.08), inset 0 1px 0 white;
+          font-size: 14px;
+        }
+        .btn-secondary:hover { color: #0b6ee8; background: rgba(255,255,255,.9); }
+        .btn-danger { margin-left: auto; color: #b42334; background: rgba(255,238,240,.82); }
+        .btn-stop { background: linear-gradient(180deg, #ff777d, #ed4652); }
+        .btn-compact { padding: 6px 10px; font-size: 12px; }
+        .grid-box {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 7px;
+          max-height: 350px;
+          overflow-y: auto;
+          margin-bottom: 15px;
+          padding: 14px;
+          border: 1px solid rgba(255,255,255,.85);
+          border-radius: 20px;
+          background: rgba(255,255,255,.43);
+          box-shadow: inset 0 1px 5px rgba(56,80,120,.045);
+        }
+        @media (min-width: 768px) {
+          .grid-box { grid-template-columns: 1fr 1fr; gap: 8px 18px; max-height: 340px; padding: 18px; }
+        }
+        .url-label {
+          min-height: 42px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          padding: 6px 9px;
+          border-radius: 12px;
+          color: #34435b;
+          font-size: 14px;
+          cursor: pointer;
+        }
+        .url-label:hover { background: rgba(255,255,255,.72); }
+        .url-name { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .url-name > span { overflow-wrap: anywhere; }
+        .url-check { width: 18px; height: 18px; accent-color: var(--blue); }
+        .section-heading {
+          grid-column: 1 / -1;
+          padding: 5px 0 7px;
+          border-bottom: 1px solid rgba(90,130,180,.18);
+          color: #42658f;
+          font-size: 13px;
+          font-weight: 700;
+        }
+        .item-count-badge {
+          flex-shrink: 0;
+          padding: 2px 8px;
+          border: 1px solid rgba(190,207,228,.62);
+          border-radius: 999px;
+          color: #38628d;
+          background: rgba(255,255,255,.78);
+          font-size: 12px;
+          font-weight: 700;
+        }
+        .auto-panel {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 13px;
+          margin-bottom: 15px;
+          padding: 16px;
+          border: 1px solid rgba(255,255,255,.88);
+          border-radius: 20px;
+          background: rgba(255,255,255,.52);
+          box-shadow: inset 0 1px 0 white;
+        }
+        .auto-panel label, .medium-control { display: flex; align-items: center; gap: 6px; color: #40516a; font-size: 13px; }
+        .medium-control { font-weight: 600; }
+        .auto-panel input[type="number"], #utm-medium-select {
+          padding: 8px 10px;
+          border: 1px solid rgba(158,177,203,.42);
+          border-radius: 11px;
+          color: #25364e;
+          background: rgba(255,255,255,.82);
+          box-shadow: inset 0 1px 2px rgba(33,52,80,.04);
+          font-size: 14px;
+        }
+        .auto-panel input[type="number"] { width: 80px; }
+        #utm-medium-select { padding: 9px 12px; font-weight: 700; }
+        .ip-box, .total-count-box {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          border: 1px solid rgba(255,255,255,.92);
+          border-radius: 14px;
+          color: #315b89;
+          background: rgba(255,255,255,.68);
+          box-shadow: 0 4px 12px rgba(35,65,105,.05), inset 0 1px 0 white;
+          font-size: 14px;
+          font-weight: 700;
+        }
+        .total-count-box { color: #075fc8; font-variant-numeric: tabular-nums; }
+        #status-text { width: 100%; margin-top: 5px; color: #1473df; font-size: 14px; font-weight: 700; }
+        h3 { margin: 16px 0 8px; color: #40516a; font-size: 14px; }
+        #log-box {
+          height: 280px;
+          overflow-y: auto;
+          padding: 15px;
+          border: 1px solid rgba(255,255,255,.9);
+          border-radius: 18px;
+          color: #33516f;
+          background: rgba(255,255,255,.66);
+          box-shadow: inset 0 1px 4px rgba(35,55,85,.05);
+          font-family: monospace;
+          font-size: 12px;
+          line-height: 1.5;
+        }
+        .log-err { color: #bd3542; }
+        .log-info { color: #3475b7; }
+        .log-warn { color: #a66a0a; }
+        @media (max-width: 600px) {
+          body { padding: 12px; }
+          .container { padding: 18px; border-radius: 22px; }
+          .auto-panel { gap: 11px; }
+          .ip-box { flex-wrap: wrap; }
+        }
+      </style>
     </head>
     <body>
-        <div class="container">
-            <h1>📊 GA4 選擇性發送控制台</h1>
-            <p>請勾選要發送的目標連結：</p>
+      <div class="container">
+        <h1>📊 GA4 選擇性發送控制台</h1>
+        <p>請勾選要發送的目標連結：</p>
 
-            <div class="actions">
-                <button type="button" class="btn-secondary" onclick="toggleAll(true)">全選</button>
-                <button type="button" class="btn-secondary" onclick="toggleAll(false)">全不選</button>
-                <button type="button" class="btn-secondary" style="background: #ef4444; margin-left: auto;" onclick="resetCounts()">清空計數</button>
-            </div>
-
-            <div class="grid-box">
-                ${checkboxesHtml}
-            </div>
-
-            <div class="auto-panel">
-                <label class="medium-control" for="utm-medium-select">
-                    GA4 utm_medium:
-                    <select id="utm-medium-select">${utmMediumOptionsHtml}</select>
-                </label>
-
-                <div class="ip-box">
-                    <span>🌐 當前裝置 IP:</span>
-                    <span id="current-ip">抓取中...</span>
-                    <button type="button" class="btn-secondary" style="padding: 2px 8px; font-size: 11px;" onclick="fetchCurrentIp()">重新整理</button>
-                </div>
-
-                <div class="total-count-box">
-                    <span>🚀 累積成功送出:</span>
-                    <span id="total-sent-count">0</span> 次
-                </div>
-
-                <label>
-                    <input type="checkbox" id="auto-repeat-chk" style="width: 16px; height: 16px;">
-                    啟用自動重複發送
-                </label>
-
-                <label>
-                    間隔 (秒):
-                    <input type="number" id="interval-sec" value="60" min="10">
-                </label>
-
-                <label>
-                    重複次數:
-                    <input type="number" id="repeat-count" value="5" min="1">
-                </label>
-
-                <div id="status-text"></div>
-            </div>
-
-            <div style="display: flex; gap: 10px;">
-                <button type="button" id="start-btn" onclick="handleStart()">單次發送 / 啟動自動重複</button>
-                <button type="button" id="stop-btn" class="btn-stop" style="display: none;" onclick="stopAutoLoop()">停止自動發送</button>
-            </div>
-
-            <h3 style="font-size: 14px; margin: 15px 0 8px 0; color: #cbd5e1;">即時執行日誌 (包含傳送參數)：</h3>
-            <div id="log-box">等待開始執行...</div>
+        <div class="actions">
+          <button type="button" class="btn-secondary" onclick="toggleAll(true)">全選</button>
+          <button type="button" class="btn-secondary" onclick="toggleAll(false)">全不選</button>
+          <button type="button" class="btn-secondary btn-danger" onclick="resetCounts()">清空全域計數</button>
         </div>
 
-        <script>
-            var autoTimer = null;
-            var countdownTimer = null;
-            var isStopped = false;
-            var currentRunCount = 0;
-            var maxRuns = 1;
-            var currentIpAddress = '未知 IP';
+        <div class="grid-box">${checkboxesHtml}</div>
 
-            // 從 localStorage 初始化讀取計數紀錄
-            var totalSentCount = parseInt(localStorage.getItem('ga_total_sent_count') || '0', 10);
-            var itemSentCounts = JSON.parse(localStorage.getItem('ga_item_sent_counts') || '{}');
+        <div class="auto-panel">
+          <label class="medium-control" for="utm-medium-select">
+            GA4 utm_medium:
+            <select id="utm-medium-select">${mediumOptionsHtml}</select>
+          </label>
 
-            async function fetchCurrentIp() {
-                var ipEl = document.getElementById('current-ip');
-                try {
-                    ipEl.innerText = '更新中...';
-                    var res = await fetch('https://api.ipify.org?format=json');
-                    var data = await res.json();
-                    currentIpAddress = data.ip;
-                    ipEl.innerText = currentIpAddress;
-                } catch (e) {
-                    currentIpAddress = '無法取得 IP';
-                    ipEl.innerText = currentIpAddress;
-                }
+          <div class="ip-box">
+            <span>🌐 當前裝置 IP:</span>
+            <span id="current-ip">抓取中...</span>
+            <button type="button" class="btn-secondary btn-compact" onclick="fetchCurrentIp()">重新整理</button>
+          </div>
+
+          <div class="total-count-box">
+            <span>🌐 全裝置累積送出:</span>
+            <span id="total-sent-count">0</span> 次
+          </div>
+
+          <label>
+            <input type="checkbox" id="auto-repeat-chk">
+            啟用自動重複發送
+          </label>
+
+          <label>間隔 (秒):
+            <input type="number" id="interval-sec" value="60" min="10">
+          </label>
+
+          <label>重複次數:
+            <input type="number" id="repeat-count" value="5" min="1">
+          </label>
+
+          <div id="status-text"></div>
+        </div>
+
+        <div class="main-actions">
+          <button type="button" id="start-btn" onclick="handleStart()">單次發送 / 啟動自動重複</button>
+          <button type="button" id="stop-btn" class="btn-stop" style="display:none" onclick="stopAutoLoop()">停止自動發送</button>
+        </div>
+
+        <h3>即時執行日誌 (包含傳送參數)：</h3>
+        <div id="log-box">等待開始執行...</div>
+      </div>
+
+      <script>
+        var autoTimer = null;
+        var countdownTimer = null;
+        var isStopped = false;
+        var currentRunCount = 0;
+        var maxRuns = 1;
+        var currentIpAddress = '未知 IP';
+
+        async function fetchCurrentIp() {
+          var ipEl = document.getElementById('current-ip');
+          try {
+            ipEl.innerText = '更新中...';
+            var res = await fetch('https://api.ipify.org?format=json');
+            var data = await res.json();
+            currentIpAddress = data.ip;
+            ipEl.innerText = currentIpAddress;
+          } catch (err) {
+            currentIpAddress = '無法取得 IP';
+            ipEl.innerText = currentIpAddress;
+          }
+        }
+
+        window.addEventListener('DOMContentLoaded', function() {
+          fetchCurrentIp();
+
+          var mediumSelect = document.getElementById('utm-medium-select');
+          var savedMedium = localStorage.getItem('ga_selected_utm_medium');
+
+          if (savedMedium && Array.from(mediumSelect.options).some(function(option) {
+            return option.value === savedMedium;
+          })) {
+            mediumSelect.value = savedMedium;
+          }
+
+          mediumSelect.addEventListener('change', function() {
+            localStorage.setItem('ga_selected_utm_medium', mediumSelect.value);
+          });
+
+          refreshCounts();
+          setInterval(refreshCounts, 3000);
+        });
+
+        function toggleAll(status) {
+          document.querySelectorAll('input[name="urlIndex"]').forEach(function(cb) {
+            cb.checked = status;
+          });
+        }
+
+        function updateStatus(message, color) {
+          var el = document.getElementById('status-text');
+          el.innerText = message;
+          if (color) el.style.color = color;
+        }
+
+        function renderCounters(data) {
+          var counts = data.items || {};
+          document.getElementById('total-sent-count').innerText = Number(data.total) || 0;
+
+          document.querySelectorAll('.item-count-badge').forEach(function(badge) {
+            var targetIndex = badge.id.replace('item-count-', '');
+            badge.innerText = (Number(counts[targetIndex]) || 0) + ' 次';
+          });
+        }
+
+        async function refreshCounts() {
+          try {
+            var res = await fetch('/counters', { cache: 'no-store' });
+            if (!res.ok) throw new Error('無法讀取全域計數');
+            renderCounters(await res.json());
+          } catch (err) {
+            console.warn('讀取全域計數失敗:', err);
+          }
+        }
+
+        async function incrementCount(targetIndex) {
+          var res = await fetch('/record-count', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ index: targetIndex })
+          });
+
+          if (!res.ok) throw new Error('伺服器無法更新全域計數');
+          renderCounters(await res.json());
+        }
+
+        async function resetCounts() {
+          if (!confirm('確定要清空所有裝置共用的計數嗎？此操作會影響所有使用者，且無法復原。')) return;
+
+          try {
+            var res = await fetch('/reset-counters', { method: 'POST' });
+            if (!res.ok) throw new Error('清空全域計數失敗');
+            renderCounters(await res.json());
+          } catch (err) {
+            alert(err.message);
+          }
+        }
+
+        function handleStart() {
+          isStopped = false;
+          var isAuto = document.getElementById('auto-repeat-chk').checked;
+
+          if (isAuto) {
+            maxRuns = parseInt(document.getElementById('repeat-count').value, 10) || 1;
+            currentRunCount = 0;
+            document.getElementById('start-btn').style.display = 'none';
+            document.getElementById('stop-btn').style.display = 'inline-block';
+            startNextLoop();
+          } else {
+            currentRunCount = 1;
+            maxRuns = 1;
+            executeTask();
+          }
+        }
+
+        function stopAutoLoop() {
+          isStopped = true;
+          clearTimeout(autoTimer);
+          clearInterval(countdownTimer);
+
+          updateStatus('🛑 已停止自動發送', '#f87171');
+          document.getElementById('start-btn').style.display = 'inline-block';
+          document.getElementById('stop-btn').style.display = 'none';
+          document.getElementById('start-btn').disabled = false;
+          document.getElementById('start-btn').innerText = '單次發送 / 啟動自動重複';
+        }
+
+        async function startNextLoop() {
+          if (isStopped) return;
+          currentRunCount++;
+
+          await executeTask();
+
+          if (isStopped) return;
+
+          var isAuto = document.getElementById('auto-repeat-chk').checked;
+
+          if (!isAuto || currentRunCount >= maxRuns) {
+            if (currentRunCount >= maxRuns && isAuto) {
+              var logBox = document.getElementById('log-box');
+              logBox.innerHTML += '<span class="log-warn">已達到設定的總重複次數 (' + maxRuns + ' 次)，自動停止任務。</span><br>';
+              logBox.scrollTop = logBox.scrollHeight;
+            }
+            stopAutoLoop();
+            return;
+          }
+
+          var sec = parseInt(document.getElementById('interval-sec').value, 10) || 60;
+          var remaining = sec;
+
+          updateStatus('⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' + remaining + ' 秒', '#087cff');
+
+          countdownTimer = setInterval(function() {
+            if (isStopped) {
+              clearInterval(countdownTimer);
+              return;
             }
 
-            // 頁面載入時還原 IP、medium 與歷史計數 UI
-            window.addEventListener('DOMContentLoaded', function() {
-                fetchCurrentIp();
+            remaining--;
+            if (remaining > 0) {
+              updateStatus('⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' + remaining + ' 秒', '#087cff');
+            } else {
+              clearInterval(countdownTimer);
+            }
+          }, 1000);
 
-                var mediumSelect = document.getElementById('utm-medium-select');
-                var savedMedium = localStorage.getItem('ga_selected_utm_medium');
+          autoTimer = setTimeout(function() {
+            if (!isStopped) startNextLoop();
+          }, sec * 1000);
+        }
 
-                if (savedMedium && Array.from(mediumSelect.options).some(function(option) {
-                    return option.value === savedMedium;
-                })) {
-                    mediumSelect.value = savedMedium;
-                }
+        async function executeTask() {
+          if (isStopped) return;
 
-                mediumSelect.addEventListener('change', function() {
-                    localStorage.setItem('ga_selected_utm_medium', mediumSelect.value);
-                });
+          var btn = document.getElementById('start-btn');
+          var logBox = document.getElementById('log-box');
+          var checkboxes = document.querySelectorAll('input[name="urlIndex"]:checked');
+          var selectedIndexes = [];
 
-                document.getElementById('total-sent-count').innerText = totalSentCount;
+          checkboxes.forEach(function(cb) {
+            selectedIndexes.push(parseInt(cb.value, 10));
+          });
 
-                Object.keys(itemSentCounts).forEach(function(index) {
-                    var itemBadge = document.getElementById('item-count-' + index);
-                    if (itemBadge) {
-                        itemBadge.innerText = itemSentCounts[index] + ' 次';
-                    }
-                });
+          if (selectedIndexes.length === 0) {
+            alert('請至少勾選一個連結！');
+            stopAutoLoop();
+            return;
+          }
+
+          btn.disabled = true;
+          var isAuto = document.getElementById('auto-repeat-chk').checked;
+          var runTag = isAuto ? ' [第 ' + currentRunCount + '/' + maxRuns + ' 輪]' : '';
+
+          await fetchCurrentIp();
+
+          updateStatus('⏳ ' + runTag + ' 數據發送中...', '#d88900');
+          logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + ']' + runTag +
+            ' 開始發送選中的 ' + selectedIndexes.length + ' 筆資料... (當前來源 IP: ' + currentIpAddress + ')</span><br>';
+
+          try {
+            var res = await fetch('/run-task', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                indexes: selectedIndexes,
+                utmMedium: document.getElementById('utm-medium-select').value
+              })
             });
 
-            function toggleAll(status) {
-                var checkboxes = document.querySelectorAll('input[name="urlIndex"]');
-                checkboxes.forEach(function(cb) {
-                    cb.checked = status;
-                });
-            }
+            var data = await res.json();
+            if (!res.ok) throw new Error(data.message || '建立發送資料失敗');
 
-            function updateStatus(msg, color) {
-                var el = document.getElementById('status-text');
-                el.innerText = msg;
-                if (color) el.style.color = color;
-            }
+            if (data.success && data.items) {
+              for (var i = 0; i < data.items.length; i++) {
+                if (isStopped) break;
 
-            function incrementCount(targetIndex) {
-                totalSentCount++;
-                document.getElementById('total-sent-count').innerText = totalSentCount;
-                localStorage.setItem('ga_total_sent_count', totalSentCount.toString());
+                var item = data.items[i];
 
-                itemSentCounts[targetIndex] = (itemSentCounts[targetIndex] || 0) + 1;
+                item.params.sid = Math.floor(Date.now() / 1000).toString();
+                item.params.sr = (window.screen && window.screen.width && window.screen.height)
+                  ? (window.screen.width + 'x' + window.screen.height)
+                  : '1920x1080';
 
-                var itemBadge = document.getElementById('item-count-' + targetIndex);
-                if (itemBadge) {
-                    itemBadge.innerText = itemSentCounts[targetIndex] + ' 次';
-                }
-
-                localStorage.setItem('ga_item_sent_counts', JSON.stringify(itemSentCounts));
-            }
-
-            function resetCounts() {
-                if (confirm('確定要清空歷史發送計數嗎？')) {
-                    localStorage.removeItem('ga_total_sent_count');
-                    localStorage.removeItem('ga_item_sent_counts');
-
-                    totalSentCount = 0;
-                    itemSentCounts = {};
-
-                    document.getElementById('total-sent-count').innerText = '0';
-
-                    var badges = document.querySelectorAll('.item-count-badge');
-                    badges.forEach(function(b) {
-                        b.innerText = '0 次';
-                    });
-                }
-            }
-
-            function handleStart() {
-                isStopped = false;
-                var isAuto = document.getElementById('auto-repeat-chk').checked;
-
-                if (isAuto) {
-                    maxRuns = parseInt(document.getElementById('repeat-count').value, 10) || 1;
-                    currentRunCount = 0;
-                    document.getElementById('start-btn').style.display = 'none';
-                    document.getElementById('stop-btn').style.display = 'inline-block';
-                    startNextLoop();
-                } else {
-                    currentRunCount = 1;
-                    maxRuns = 1;
-                    executeTask();
-                }
-            }
-
-            function stopAutoLoop() {
-                isStopped = true;
-                clearTimeout(autoTimer);
-                clearInterval(countdownTimer);
-
-                updateStatus('🛑 已停止自動發送', '#f87171');
-                document.getElementById('start-btn').style.display = 'inline-block';
-                document.getElementById('stop-btn').style.display = 'none';
-                document.getElementById('start-btn').disabled = false;
-                document.getElementById('start-btn').innerText = '單次發送 / 啟動自動重複';
-            }
-
-            async function startNextLoop() {
-                if (isStopped) return;
-                currentRunCount++;
-
-                await executeTask();
-
-                if (isStopped) return;
-
-                var isAuto = document.getElementById('auto-repeat-chk').checked;
-
-                if (!isAuto || currentRunCount >= maxRuns) {
-                    if (currentRunCount >= maxRuns && isAuto) {
-                        var logBox = document.getElementById('log-box');
-                        logBox.innerHTML += '<span class="log-warn">已達到設定的總重複次數 (' + maxRuns + ' 次)，自動停止任務。</span><br>';
-                        logBox.scrollTop = logBox.scrollHeight;
-                    }
-
-                    stopAutoLoop();
-                    return;
-                }
-
-                var sec = parseInt(document.getElementById('interval-sec').value, 10) || 60;
-                var remaining = sec;
-
-                updateStatus('⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' + remaining + ' 秒', '#38bdf8');
-
-                countdownTimer = setInterval(function() {
-                    if (isStopped) {
-                        clearInterval(countdownTimer);
-                        return;
-                    }
-
-                    remaining--;
-
-                    if (remaining > 0) {
-                        updateStatus('⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' + remaining + ' 秒', '#38bdf8');
-                    } else {
-                        clearInterval(countdownTimer);
-                    }
-                }, 1000);
-
-                autoTimer = setTimeout(function() {
-                    if (!isStopped) startNextLoop();
-                }, sec * 1000);
-            }
-
-            async function executeTask() {
-                if (isStopped) return;
-
-                var btn = document.getElementById('start-btn');
-                var logBox = document.getElementById('log-box');
-
-                var checkboxes = document.querySelectorAll('input[name="urlIndex"]:checked');
-                var selectedIndexes = [];
-                checkboxes.forEach(function(cb) {
-                    selectedIndexes.push(parseInt(cb.value, 10));
-                });
-
-                if (selectedIndexes.length === 0) {
-                    alert('請至少勾選一個連結！');
-                    stopAutoLoop();
-                    return;
-                }
-
-                btn.disabled = true;
-                var isAuto = document.getElementById('auto-repeat-chk').checked;
-                var runTag = isAuto ? ' [第 ' + currentRunCount + '/' + maxRuns + ' 輪]' : '';
-
-                await fetchCurrentIp();
-
-                updateStatus('⏳ ' + runTag + ' 數據發送中...', '#f59e0b');
-                logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + ']' + runTag + ' 開始發送選中的 ' + selectedIndexes.length + ' 筆資料... (當前來源 IP: ' + currentIpAddress + ')</span><br>';
+                var queryParams = new URLSearchParams(item.params).toString();
+                var targetUrl = 'https://www.google-analytics.com/g/collect?' + queryParams;
 
                 try {
-                    var res = await fetch('/run-task', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            indexes: selectedIndexes,
-                            utmMedium: document.getElementById('utm-medium-select').value
-                        })
-                    });
+                  await fetch(targetUrl, { mode: 'no-cors' });
 
-                    var data = await res.json();
+                  try {
+                    await incrementCount(selectedIndexes[i]);
+                  } catch (countErr) {
+                    logBox.innerHTML += '<span class="log-warn">全域計數更新失敗: ' + countErr.message + '</span><br>';
+                  }
 
-                    if (data.success && data.items) {
-                        for (var i = 0; i < data.items.length; i++) {
-                            if (isStopped) break;
+                  var paramLogHtml =
+                    '<div style="color:#52657c;font-size:11px;padding-left:20px;margin-bottom:6px;">' +
+                    '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
+                    '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid +
+                    ' | <b>cid:</b> ' + item.params.cid +
+                    ' | <b>sid:</b> ' + item.params.sid +
+                    ' | <b>_fv:</b> ' + item.params._fv + '<br>' +
+                    '<span style="padding-left:80px;"><b>UTM 歸因:</b> source=' +
+                    (item.params.cs || 'none') + ' | medium=' + (item.params.cm || 'none') +
+                    ' | campaign=' + (item.params.cn || 'none') + '</span><br>' +
+                    '<span style="padding-left:80px;"><b>Consent Mode:</b> gcs=' +
+                    item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
+                    '<span style="padding-left:80px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
+                    '<span style="padding-left:80px;"><b>dl:</b> ' + item.params.dl + '</span>' +
+                    '</div>';
 
-                            var item = data.items[i];
-
-                            item.params.sid = Math.floor(Date.now() / 1000).toString();
-                            item.params.sr = (window.screen && window.screen.width && window.screen.height)
-                                ? (window.screen.width + 'x' + window.screen.height)
-                                : '1920x1080';
-
-                            var queryParams = new URLSearchParams(item.params).toString();
-                            var targetUrl = 'https://www.google-analytics.com/g/collect?' + queryParams;
-
-                            try {
-                                await fetch(targetUrl, { mode: 'no-cors' });
-
-                                incrementCount(selectedIndexes[i]);
-
-                                var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
-                                    '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
-                                    '↳ <b>[核心識別參數]</b> <b>tid:</b> ' + item.params.tid + ' | <b>cid:</b> ' + item.params.cid + ' | <b>sid:</b> ' + item.params.sid + ' | <b>_fv:</b> ' + item.params._fv + '<br>' +
-                                    '<span style="padding-left: 80px;"><b>UTM 歸因:</b> source=' + (item.params.cs || 'none') + ' | medium=' + (item.params.cm || 'none') + ' | campaign=' + (item.params.cn || 'none') + '</span><br>' +
-                                    '<span style="padding-left: 80px;"><b>Consent Mode:</b> gcs=' + item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
-                                    '<span style="padding-left: 80px;"><b>dt:</b> ' + item.params.dt + '</span><br>' +
-                                    '<span style="padding-left: 80px;"><b>dl:</b> ' + item.params.dl + '</span>' +
-                                    '</div>';
-
-                                logBox.innerHTML += '<span style="color: #34d399;">[成功] (' + (i + 1) + '/' + data.items.length + ') ' + item.name + ' 已送達</span><br>' + paramLogHtml;
-                            } catch (sendErr) {
-                                logBox.innerHTML += '<span style="color: #f87171;">[失敗] (' + (i + 1) + '/' + data.items.length + ') ' + item.name + ' 失敗: ' + sendErr.message + '</span><br>';
-                            }
-
-                            logBox.scrollTop = logBox.scrollHeight;
-
-                            if (i < data.items.length - 1) {
-                                var delayMs = Math.floor(Math.random() * 5000) + 5000;
-                                await new Promise(function(resolve) {
-                                    setTimeout(resolve, delayMs);
-                                });
-                            }
-                        }
-                    }
-                } catch (err) {
-                    logBox.innerHTML += '<span class="log-err">執行發生錯誤: ' + err.message + '</span><br>';
-                } finally {
-                    if (!isAuto && !isStopped) {
-                        btn.disabled = false;
-                        btn.innerText = '單次發送 / 啟動自動重複';
-                        updateStatus('✅ 發送完畢', '#34d399');
-                    }
-
-                    logBox.innerHTML += '<span class="log-info">=== 本次任務執行完畢 ===</span><br>';
-                    logBox.scrollTop = logBox.scrollHeight;
+                  logBox.innerHTML += '<span style="color:#16804a;">[成功] (' + (i + 1) +
+                    '/' + data.items.length + ') ' + item.name + ' 已送達</span><br>' + paramLogHtml;
+                } catch (sendErr) {
+                  logBox.innerHTML += '<span class="log-err">[失敗] (' + (i + 1) + '/' +
+                    data.items.length + ') ' + item.name + ' 失敗: ' + sendErr.message + '</span><br>';
                 }
+
+                logBox.scrollTop = logBox.scrollHeight;
+
+                if (i < data.items.length - 1) {
+                  var delayMs = Math.floor(Math.random() * 5000) + 5000;
+                  await new Promise(function(resolve) {
+                    setTimeout(resolve, delayMs);
+                  });
+                }
+              }
             }
-        </script>
+          } catch (err) {
+            logBox.innerHTML += '<span class="log-err">執行發生錯誤: ' + err.message + '</span><br>';
+          } finally {
+            if (!isAuto && !isStopped) {
+              btn.disabled = false;
+              btn.innerText = '單次發送 / 啟動自動重複';
+              updateStatus('✅ 發送完畢', '#16804a');
+            }
+
+            logBox.innerHTML += '<span class="log-info">=== 本次任務執行完畢 ===</span><br>';
+            logBox.scrollTop = logBox.scrollHeight;
+          }
+        }
+      </script>
     </body>
     </html>
   `);
@@ -446,77 +639,137 @@ app.get('/', (req, res) => {
 
 app.post('/run-task', (req, res) => {
   try {
-    const selectedIndexes = (req.body && Array.isArray(req.body.indexes)) ? req.body.indexes : [];
+    const selectedIndexes = req.body && Array.isArray(req.body.indexes)
+      ? req.body.indexes
+      : [];
+
     const requestedUtmMedium = req.body && req.body.utmMedium !== undefined
       ? req.body.utmMedium
       : 'W5009';
 
     if (typeof requestedUtmMedium !== 'string' || !UTM_MEDIUM_OPTIONS.includes(requestedUtmMedium)) {
-      return res.status(400).json({ success: false, message: '收到未允許的 utm_medium。' });
+      return res.status(400).json({
+        success: false,
+        message: '收到未允許的 utm_medium。'
+      });
     }
 
     if (selectedIndexes.length === 0) {
-      return res.status(400).json({ success: false, message: '未收到有效的選取索引。' });
+      return res.status(400).json({
+        success: false,
+        message: '未收到有效的選取索引。'
+      });
     }
 
-    const items = selectedIndexes.map(targetIndex => {
-      const target = targetUrls[targetIndex];
-      if (!target) return null;
+    const items = selectedIndexes
+      .filter(index => Number.isInteger(index) && targetUrls[index] && targetUrls[index].url)
+      .map(targetIndex => {
+        const target = targetUrls[targetIndex];
+        const uniqueClientId =
+          Math.floor(Math.random() * 899999999 + 100000000) + '.' +
+          Math.floor(Math.random() * 899999999 + 100000000);
+        const engagementTimeMs = Math.floor(Math.random() * 5000) + 10000;
 
-      const uniqueClientId =
-        Math.floor(Math.random() * 899999999 + 100000000) + '.' +
-        Math.floor(Math.random() * 899999999 + 100000000);
+        let utmSource = '';
+        let utmCampaign = '';
+        let targetUrl = target.url;
 
-      const engagementTimeMs = Math.floor(Math.random() * 5000) + 10000;
-
-      let utmSource = '';
-      let utmCampaign = '';
-      let targetUrl = target.url;
-
-      try {
-        const parsedUrl = new URL(target.url);
-        parsedUrl.searchParams.set('utm_medium', requestedUtmMedium);
-        targetUrl = parsedUrl.toString();
-        utmSource = parsedUrl.searchParams.get('utm_source') || '';
-        utmCampaign = parsedUrl.searchParams.get('utm_campaign') || '';
-      } catch (e) {
-        // 保留原有錯誤處理方式
-      }
-
-      return {
-        name: target.name,
-        params: {
-          v: '2',
-          tid: MEASUREMENT_ID,
-          gtm: '45je68e1v89223874',
-          gcs: 'G111',
-          gcd: '13r3r3I3I5l1',
-          cid: uniqueClientId,
-          sid: '',
-          sct: '1',
-          seg: '1',
-          _fv: '1',
-          _ss: '1',
-          _s: '1',
-          ul: 'zh-tw',
-          _p: Math.floor(Math.random() * 1000000000).toString(),
-          _et: engagementTimeMs.toString(),
-          dl: targetUrl,
-          dt: target.name,
-          en: 'page_view',
-          cs: utmSource,
-          cm: requestedUtmMedium,
-          cn: utmCampaign
+        try {
+          const parsedUrl = new URL(target.url);
+          parsedUrl.searchParams.set('utm_medium', requestedUtmMedium);
+          targetUrl = parsedUrl.toString();
+          utmSource = parsedUrl.searchParams.get('utm_source') || '';
+          utmCampaign = parsedUrl.searchParams.get('utm_campaign') || '';
+        } catch (err) {
+          // 保留原本的錯誤處理方式
         }
-      };
-    }).filter(Boolean);
+
+        return {
+          name: target.name,
+          params: {
+            v: '2',
+            tid: MEASUREMENT_ID,
+            gtm: '45je68e1v89223874',
+            gcs: 'G111',
+            gcd: '13r3r3I3I5l1',
+            cid: uniqueClientId,
+            sid: '',
+            sct: '1',
+            seg: '1',
+            _fv: '1',
+            _ss: '1',
+            _s: '1',
+            ul: 'zh-tw',
+            _p: Math.floor(Math.random() * 1000000000).toString(),
+            _et: engagementTimeMs.toString(),
+            dl: targetUrl,
+            dt: target.name,
+            en: 'page_view',
+            cs: utmSource,
+            cm: requestedUtmMedium,
+            cn: utmCampaign
+          }
+        };
+      });
 
     res.json({ success: true, items });
-  } catch (globalErr) {
-    res.status(500).json({ success: false, message: globalErr.message });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+app.get('/counters', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json(globalCounters);
+});
+
+app.post('/record-count', (req, res) => {
+  const targetIndex = Number(req.body && req.body.index);
+
+  if (!Number.isInteger(targetIndex) || !targetUrls[targetIndex] || !targetUrls[targetIndex].url) {
+    return res.status(400).json({
+      success: false,
+      message: '無效的目標索引。'
+    });
+  }
+
+  const itemKey = String(targetIndex);
+  globalCounters.total += 1;
+  globalCounters.items[itemKey] = (Number(globalCounters.items[itemKey]) || 0) + 1;
+
+  try {
+    saveCounters();
+    res.json(globalCounters);
+  } catch (err) {
+    globalCounters.total -= 1;
+    globalCounters.items[itemKey] -= 1;
+    res.status(500).json({
+      success: false,
+      message: '無法儲存全域計數。'
+    });
+  }
+});
+
+app.post('/reset-counters', (req, res) => {
+  const previousCounters = {
+    total: globalCounters.total,
+    items: { ...globalCounters.items }
+  };
+
+  globalCounters = { total: 0, items: {} };
+
+  try {
+    saveCounters();
+    res.json(globalCounters);
+  } catch (err) {
+    globalCounters = previousCounters;
+    res.status(500).json({
+      success: false,
+      message: '無法清空全域計數。'
+    });
   }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`UI 介面已啟動！請在瀏覽器開啟: http://localhost:${PORT}`);
+  console.log('UI 介面已啟動！請在瀏覽器開啟: http://localhost:' + PORT);
 });
