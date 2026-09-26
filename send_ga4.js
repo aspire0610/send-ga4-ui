@@ -110,7 +110,9 @@ app.get('/', (req, res) => {
           --muted: #667085;
           --blue: #087cff;
         }
+
         * { box-sizing: border-box; }
+
         body {
           min-height: 100vh;
           margin: 0;
@@ -122,6 +124,7 @@ app.get('/', (req, res) => {
             radial-gradient(ellipse at 90% 16%, rgba(222,197,255,.50), transparent 32%),
             linear-gradient(145deg, #edf5ff, #f5f4fb 48%, #eef4fb);
         }
+
         body::before {
           content: "";
           position: fixed;
@@ -134,6 +137,7 @@ app.get('/', (req, res) => {
           filter: blur(60px);
           pointer-events: none;
         }
+
         .container {
           position: relative;
           max-width: 980px;
@@ -146,13 +150,16 @@ app.get('/', (req, res) => {
           -webkit-backdrop-filter: saturate(170%) blur(28px);
           box-shadow: 0 24px 70px rgba(40,65,105,.14), inset 0 1px 0 rgba(255,255,255,.9);
         }
+
         h1 {
           margin: 0 0 5px;
           color: #162b49;
           font-size: clamp(22px, 4vw, 29px);
           letter-spacing: -.035em;
         }
+
         p { color: var(--muted); font-size: 14px; }
+
         button {
           padding: 12px 20px;
           border: 1px solid rgba(255,255,255,.72);
@@ -165,10 +172,13 @@ app.get('/', (req, res) => {
           cursor: pointer;
           transition: .18s ease;
         }
+
         button:hover { transform: translateY(-1px); filter: brightness(1.04); }
         button:disabled { background: #a7b4c5; box-shadow: none; cursor: not-allowed; }
+
         .actions, .main-actions { display: flex; gap: 10px; flex-wrap: wrap; }
         .actions { margin: 20px 0 14px; }
+
         .btn-secondary {
           padding: 10px 16px;
           color: #30415c;
@@ -177,10 +187,12 @@ app.get('/', (req, res) => {
           box-shadow: 0 4px 14px rgba(40,60,90,.08), inset 0 1px 0 white;
           font-size: 14px;
         }
+
         .btn-secondary:hover { color: #0b6ee8; background: rgba(255,255,255,.9); }
         .btn-danger { margin-left: auto; color: #b42334; background: rgba(255,238,240,.82); }
         .btn-stop { background: linear-gradient(180deg, #ff777d, #ed4652); }
         .btn-compact { padding: 6px 10px; font-size: 12px; }
+
         .grid-box {
           display: grid;
           grid-template-columns: 1fr;
@@ -194,9 +206,11 @@ app.get('/', (req, res) => {
           background: rgba(255,255,255,.43);
           box-shadow: inset 0 1px 5px rgba(56,80,120,.045);
         }
+
         @media (min-width: 768px) {
           .grid-box { grid-template-columns: 1fr 1fr; gap: 8px 18px; max-height: 340px; padding: 18px; }
         }
+
         .url-label {
           min-height: 42px;
           display: flex;
@@ -209,10 +223,12 @@ app.get('/', (req, res) => {
           font-size: 14px;
           cursor: pointer;
         }
+
         .url-label:hover { background: rgba(255,255,255,.72); }
         .url-name { display: flex; align-items: center; gap: 10px; min-width: 0; }
         .url-name > span { overflow-wrap: anywhere; }
         .url-check { width: 18px; height: 18px; accent-color: var(--blue); }
+
         .section-heading {
           grid-column: 1 / -1;
           padding: 5px 0 7px;
@@ -221,6 +237,7 @@ app.get('/', (req, res) => {
           font-size: 13px;
           font-weight: 700;
         }
+
         .item-count-badge {
           flex-shrink: 0;
           padding: 2px 8px;
@@ -231,6 +248,7 @@ app.get('/', (req, res) => {
           font-size: 12px;
           font-weight: 700;
         }
+
         .auto-panel {
           display: flex;
           align-items: center;
@@ -243,8 +261,17 @@ app.get('/', (req, res) => {
           background: rgba(255,255,255,.52);
           box-shadow: inset 0 1px 0 white;
         }
-        .auto-panel label, .medium-control { display: flex; align-items: center; gap: 6px; color: #40516a; font-size: 13px; }
+
+        .auto-panel label, .medium-control {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          color: #40516a;
+          font-size: 13px;
+        }
+
         .medium-control { font-weight: 600; }
+
         .auto-panel input[type="number"], #utm-medium-select {
           padding: 8px 10px;
           border: 1px solid rgba(158,177,203,.42);
@@ -254,8 +281,10 @@ app.get('/', (req, res) => {
           box-shadow: inset 0 1px 2px rgba(33,52,80,.04);
           font-size: 14px;
         }
+
         .auto-panel input[type="number"] { width: 80px; }
         #utm-medium-select { padding: 9px 12px; font-weight: 700; }
+
         .ip-box, .total-count-box {
           display: flex;
           align-items: center;
@@ -269,9 +298,11 @@ app.get('/', (req, res) => {
           font-size: 14px;
           font-weight: 700;
         }
+
         .total-count-box { color: #075fc8; font-variant-numeric: tabular-nums; }
         #status-text { width: 100%; margin-top: 5px; color: #1473df; font-size: 14px; font-weight: 700; }
         h3 { margin: 16px 0 8px; color: #40516a; font-size: 14px; }
+
         #log-box {
           height: 280px;
           overflow-y: auto;
@@ -285,9 +316,11 @@ app.get('/', (req, res) => {
           font-size: 12px;
           line-height: 1.5;
         }
+
         .log-err { color: #bd3542; }
         .log-info { color: #3475b7; }
         .log-warn { color: #a66a0a; }
+
         @media (max-width: 600px) {
           body { padding: 12px; }
           .container { padding: 18px; border-radius: 22px; }
@@ -296,6 +329,7 @@ app.get('/', (req, res) => {
         }
       </style>
     </head>
+
     <body>
       <div class="container">
         <h1>📊 GA4 選擇性發送控制台</h1>
@@ -361,6 +395,7 @@ app.get('/', (req, res) => {
 
         async function fetchCurrentIp() {
           var ipEl = document.getElementById('current-ip');
+
           try {
             ipEl.innerText = '更新中...';
             var res = await fetch('https://api.ipify.org?format=json');
@@ -425,6 +460,24 @@ app.get('/', (req, res) => {
           }
         }
 
+        // 顯示伺服器實際回應，避免只看到通用錯誤。
+        async function readApiResponse(res) {
+          var text = await res.text();
+          var data;
+
+          try {
+            data = JSON.parse(text);
+          } catch (err) {
+            data = { message: text.slice(0, 180) || '伺服器沒有回傳 JSON' };
+          }
+
+          if (!res.ok) {
+            throw new Error((data.message || '請求失敗') + ' (HTTP ' + res.status + ')');
+          }
+
+          return data;
+        }
+
         async function incrementCount(targetIndex) {
           var res = await fetch('/record-count', {
             method: 'POST',
@@ -432,8 +485,9 @@ app.get('/', (req, res) => {
             body: JSON.stringify({ index: targetIndex })
           });
 
-          if (!res.ok) throw new Error('伺服器無法更新全域計數');
-          renderCounters(await res.json());
+          var data = await readApiResponse(res);
+          renderCounters(data);
+          return data.persisted !== false;
         }
 
         async function resetCounts() {
@@ -441,8 +495,12 @@ app.get('/', (req, res) => {
 
           try {
             var res = await fetch('/reset-counters', { method: 'POST' });
-            if (!res.ok) throw new Error('清空全域計數失敗');
-            renderCounters(await res.json());
+            var data = await readApiResponse(res);
+            renderCounters(data);
+
+            if (data.persisted === false) {
+              alert('計數已在目前伺服器重設，但無法寫入 JSON 檔；伺服器重啟後可能無法保留。');
+            }
           } catch (err) {
             alert(err.message);
           }
@@ -470,7 +528,7 @@ app.get('/', (req, res) => {
           clearTimeout(autoTimer);
           clearInterval(countdownTimer);
 
-          updateStatus('🛑 已停止自動發送', '#f87171');
+          updateStatus('🛑 已停止自動發送', '#bd3542');
           document.getElementById('start-btn').style.display = 'inline-block';
           document.getElementById('stop-btn').style.display = 'none';
           document.getElementById('start-btn').disabled = false;
@@ -490,9 +548,11 @@ app.get('/', (req, res) => {
           if (!isAuto || currentRunCount >= maxRuns) {
             if (currentRunCount >= maxRuns && isAuto) {
               var logBox = document.getElementById('log-box');
-              logBox.innerHTML += '<span class="log-warn">已達到設定的總重複次數 (' + maxRuns + ' 次)，自動停止任務。</span><br>';
+              logBox.innerHTML += '<span class="log-warn">已達到設定的總重複次數 (' +
+                maxRuns + ' 次)，自動停止任務。</span><br>';
               logBox.scrollTop = logBox.scrollHeight;
             }
+
             stopAutoLoop();
             return;
           }
@@ -500,7 +560,11 @@ app.get('/', (req, res) => {
           var sec = parseInt(document.getElementById('interval-sec').value, 10) || 60;
           var remaining = sec;
 
-          updateStatus('⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' + remaining + ' 秒', '#087cff');
+          updateStatus(
+            '⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' +
+            remaining + ' 秒',
+            '#087cff'
+          );
 
           countdownTimer = setInterval(function() {
             if (isStopped) {
@@ -509,8 +573,13 @@ app.get('/', (req, res) => {
             }
 
             remaining--;
+
             if (remaining > 0) {
-              updateStatus('⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' + remaining + ' 秒', '#087cff');
+              updateStatus(
+                '⏱️ 第 (' + currentRunCount + '/' + maxRuns + ') 次完成，下一次發送倒數: ' +
+                remaining + ' 秒',
+                '#087cff'
+              );
             } else {
               clearInterval(countdownTimer);
             }
@@ -540,14 +609,18 @@ app.get('/', (req, res) => {
           }
 
           btn.disabled = true;
+
           var isAuto = document.getElementById('auto-repeat-chk').checked;
           var runTag = isAuto ? ' [第 ' + currentRunCount + '/' + maxRuns + ' 輪]' : '';
 
           await fetchCurrentIp();
 
           updateStatus('⏳ ' + runTag + ' 數據發送中...', '#d88900');
-          logBox.innerHTML += '<br><span class="log-info">[' + new Date().toLocaleTimeString() + ']' + runTag +
-            ' 開始發送選中的 ' + selectedIndexes.length + ' 筆資料... (當前來源 IP: ' + currentIpAddress + ')</span><br>';
+
+          logBox.innerHTML += '<br><span class="log-info">[' +
+            new Date().toLocaleTimeString() + ']' + runTag +
+            ' 開始發送選中的 ' + selectedIndexes.length +
+            ' 筆資料... (當前來源 IP: ' + currentIpAddress + ')</span><br>';
 
           try {
             var res = await fetch('/run-task', {
@@ -559,8 +632,7 @@ app.get('/', (req, res) => {
               })
             });
 
-            var data = await res.json();
-            if (!res.ok) throw new Error(data.message || '建立發送資料失敗');
+            var data = await readApiResponse(res);
 
             if (data.success && data.items) {
               for (var i = 0; i < data.items.length; i++) {
@@ -580,9 +652,14 @@ app.get('/', (req, res) => {
                   await fetch(targetUrl, { mode: 'no-cors' });
 
                   try {
-                    await incrementCount(selectedIndexes[i]);
+                    var persisted = await incrementCount(selectedIndexes[i]);
+
+                    if (!persisted) {
+                      logBox.innerHTML += '<span class="log-warn">計數已在目前伺服器共用，但無法寫入 JSON 檔；伺服器重啟後可能無法保留。</span><br>';
+                    }
                   } catch (countErr) {
-                    logBox.innerHTML += '<span class="log-warn">全域計數更新失敗: ' + countErr.message + '</span><br>';
+                    logBox.innerHTML += '<span class="log-warn">全域計數更新失敗: ' +
+                      countErr.message + '</span><br>';
                   }
 
                   var paramLogHtml =
@@ -593,7 +670,8 @@ app.get('/', (req, res) => {
                     ' | <b>sid:</b> ' + item.params.sid +
                     ' | <b>_fv:</b> ' + item.params._fv + '<br>' +
                     '<span style="padding-left:80px;"><b>UTM 歸因:</b> source=' +
-                    (item.params.cs || 'none') + ' | medium=' + (item.params.cm || 'none') +
+                    (item.params.cs || 'none') +
+                    ' | medium=' + (item.params.cm || 'none') +
                     ' | campaign=' + (item.params.cn || 'none') + '</span><br>' +
                     '<span style="padding-left:80px;"><b>Consent Mode:</b> gcs=' +
                     item.params.gcs + ' | gcd=' + item.params.gcd + '</span><br>' +
@@ -601,11 +679,13 @@ app.get('/', (req, res) => {
                     '<span style="padding-left:80px;"><b>dl:</b> ' + item.params.dl + '</span>' +
                     '</div>';
 
-                  logBox.innerHTML += '<span style="color:#16804a;">[成功] (' + (i + 1) +
-                    '/' + data.items.length + ') ' + item.name + ' 已送達</span><br>' + paramLogHtml;
+                  logBox.innerHTML += '<span style="color:#16804a;">[成功] (' +
+                    (i + 1) + '/' + data.items.length + ') ' +
+                    item.name + ' 已送達</span><br>' + paramLogHtml;
                 } catch (sendErr) {
-                  logBox.innerHTML += '<span class="log-err">[失敗] (' + (i + 1) + '/' +
-                    data.items.length + ') ' + item.name + ' 失敗: ' + sendErr.message + '</span><br>';
+                  logBox.innerHTML += '<span class="log-err">[失敗] (' +
+                    (i + 1) + '/' + data.items.length + ') ' +
+                    item.name + ' 失敗: ' + sendErr.message + '</span><br>';
                 }
 
                 logBox.scrollTop = logBox.scrollHeight;
@@ -619,7 +699,8 @@ app.get('/', (req, res) => {
               }
             }
           } catch (err) {
-            logBox.innerHTML += '<span class="log-err">執行發生錯誤: ' + err.message + '</span><br>';
+            logBox.innerHTML += '<span class="log-err">執行發生錯誤: ' +
+              err.message + '</span><br>';
           } finally {
             if (!isAuto && !isStopped) {
               btn.disabled = false;
@@ -647,7 +728,10 @@ app.post('/run-task', (req, res) => {
       ? req.body.utmMedium
       : 'W5009';
 
-    if (typeof requestedUtmMedium !== 'string' || !UTM_MEDIUM_OPTIONS.includes(requestedUtmMedium)) {
+    if (
+      typeof requestedUtmMedium !== 'string' ||
+      !UTM_MEDIUM_OPTIONS.includes(requestedUtmMedium)
+    ) {
       return res.status(400).json({
         success: false,
         message: '收到未允許的 utm_medium。'
@@ -662,12 +746,18 @@ app.post('/run-task', (req, res) => {
     }
 
     const items = selectedIndexes
-      .filter(index => Number.isInteger(index) && targetUrls[index] && targetUrls[index].url)
+      .filter(index =>
+        Number.isInteger(index) &&
+        targetUrls[index] &&
+        targetUrls[index].url
+      )
       .map(targetIndex => {
         const target = targetUrls[targetIndex];
+
         const uniqueClientId =
           Math.floor(Math.random() * 899999999 + 100000000) + '.' +
           Math.floor(Math.random() * 899999999 + 100000000);
+
         const engagementTimeMs = Math.floor(Math.random() * 5000) + 10000;
 
         let utmSource = '';
@@ -726,7 +816,11 @@ app.get('/counters', (req, res) => {
 app.post('/record-count', (req, res) => {
   const targetIndex = Number(req.body && req.body.index);
 
-  if (!Number.isInteger(targetIndex) || !targetUrls[targetIndex] || !targetUrls[targetIndex].url) {
+  if (
+    !Number.isInteger(targetIndex) ||
+    !targetUrls[targetIndex] ||
+    !targetUrls[targetIndex].url
+  ) {
     return res.status(400).json({
       success: false,
       message: '無效的目標索引。'
@@ -735,39 +829,35 @@ app.post('/record-count', (req, res) => {
 
   const itemKey = String(targetIndex);
   globalCounters.total += 1;
-  globalCounters.items[itemKey] = (Number(globalCounters.items[itemKey]) || 0) + 1;
+  globalCounters.items[itemKey] =
+    (Number(globalCounters.items[itemKey]) || 0) + 1;
+
+  let persisted = true;
 
   try {
     saveCounters();
-    res.json(globalCounters);
   } catch (err) {
-    globalCounters.total -= 1;
-    globalCounters.items[itemKey] -= 1;
-    res.status(500).json({
-      success: false,
-      message: '無法儲存全域計數。'
-    });
+    persisted = false;
+    console.error('無法儲存全域計數檔案:', err.message);
   }
+
+  // 檔案系統不能寫入時，計數仍會在目前伺服器程序內共用。
+  res.json({ ...globalCounters, persisted });
 });
 
 app.post('/reset-counters', (req, res) => {
-  const previousCounters = {
-    total: globalCounters.total,
-    items: { ...globalCounters.items }
-  };
-
   globalCounters = { total: 0, items: {} };
+
+  let persisted = true;
 
   try {
     saveCounters();
-    res.json(globalCounters);
   } catch (err) {
-    globalCounters = previousCounters;
-    res.status(500).json({
-      success: false,
-      message: '無法清空全域計數。'
-    });
+    persisted = false;
+    console.error('無法儲存重設後的全域計數:', err.message);
   }
+
+  res.json({ ...globalCounters, persisted });
 });
 
 app.listen(PORT, '0.0.0.0', () => {
