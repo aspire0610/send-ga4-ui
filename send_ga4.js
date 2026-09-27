@@ -7,6 +7,16 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-V2C61GZKEN"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-V2C61GZKEN');
+</script>
+
 const targetUrls = [
     { name: '花櫃', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Flowers-Plant/c/121307?utm_source=warehouse&utm_medium=W5009&utm_campaign=posm-flowers' },
   { name: '珠寶櫃', url: 'https://www.costco.com.tw/Jewelry-Gold/Jewelry-Buying-guide/Jewelry-Gold/c/CL10?utm_source=warehouse&utm_medium=W5009&utm_campaign=posm-jewelry' },
@@ -46,7 +56,7 @@ const targetUrls = [
   
 ];
 
-const MEASUREMENT_ID = 'G-F5DSSB6YJ3';'G-V2C61GZKEN';
+const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
 
 const UTM_MEDIUM_OPTIONS = [
   'W5003', 'W5009', 'W5010', 'W5011', 'W872', 'W874', 'W886',
