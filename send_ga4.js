@@ -105,7 +105,7 @@ app.get('/', (req, res) => {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Costco GA4 發送控制台</title>
+      <title> GA4 發送控制台</title>
       <style>
         :root {
           color-scheme: light;
