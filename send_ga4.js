@@ -7,15 +7,6 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-V2C61GZKEN"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-V2C61GZKEN');
-</script>
 
 const targetUrls = [
     { name: '花櫃', url: 'https://www.costco.com.tw/Sports-Lifestyle/Garden-Lifestyle/Flowers-Plant/c/121307?utm_source=warehouse&utm_medium=W5009&utm_campaign=posm-flowers' },
@@ -875,3 +866,13 @@ app.post('/reset-counters', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
   console.log('UI 介面已啟動！請在瀏覽器開啟: http://localhost:' + PORT);
 });
+
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-V2C61GZKEN"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-V2C61GZKEN');
+</script>
