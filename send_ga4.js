@@ -47,8 +47,8 @@ const targetUrls = [
   
 ];
 
-const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
-
+//const MEASUREMENT_ID = 'G-F5DSSB6YJ3';
+const MEASUREMENT_ID = 'G-V2C61GZKEN';
 const UTM_MEDIUM_OPTIONS = [
   'W5003', 'W5009', 'W5010', 'W5011', 'W872', 'W874', 'W886',
   'W5001', 'W5002', 'W5007', 'W5008', 'W5018', 'W870', 'W5020'
