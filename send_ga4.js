@@ -716,10 +716,8 @@ app.get('/', (req, res) => {
           }
         }
       </script>
-    </body>
-    </html>
-
-    <!-- Google tag (gtag.js) -->
+      
+       <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-V2C61GZKEN"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -728,6 +726,11 @@ app.get('/', (req, res) => {
 
   gtag('config', 'G-V2C61GZKEN');
 </script>
+
+    </body>
+    </html>
+
+   
 
   `);
 });
