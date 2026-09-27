@@ -718,6 +718,17 @@ app.get('/', (req, res) => {
       </script>
     </body>
     </html>
+
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-V2C61GZKEN"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-V2C61GZKEN');
+</script>
+
   `);
 });
 
@@ -867,12 +878,3 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log('UI 介面已啟動！請在瀏覽器開啟: http://localhost:' + PORT);
 });
 
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-V2C61GZKEN"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-
-  gtag('config', 'G-V2C61GZKEN');
-</script>
