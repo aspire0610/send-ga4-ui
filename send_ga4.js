@@ -1,10 +1,27 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const app = express();
 
 const PORT = process.env.PORT || 3000;
+// Records survive process sleep/restarts when the hosting platform keeps its
+// local filesystem. Set GA_LOG_FILE to a mounted persistent-volume path if available.
+const SEND_LOG_FILE = process.env.GA_LOG_FILE || path.join(__dirname, 'ga-send-log.jsonl');
 
 // 解析 JSON Body
 app.use(express.json());
+
+function readSendLogs() {
+  try {
+    return fs.readFileSync(SEND_LOG_FILE, 'utf8')
+      .split('\n')
+      .filter(Boolean)
+      .map(line => JSON.parse(line));
+  } catch (error) {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  }
+}
 
 
 const targetUrls = [
@@ -105,7 +122,7 @@ app.get('/', (req, res) => {
             <div class="actions">
                 <button type="button" class="btn-secondary" onclick="toggleAll(true)">全選</button>
                 <button type="button" class="btn-secondary" onclick="toggleAll(false)">全不選</button>
-                <button type="button" class="btn-secondary" style="background: #ef4444; margin-left: auto;" onclick="resetCounts()">清空計數</button>
+                <button type="button" class="btn-secondary" style="background: #ef4444; margin-left: auto;" onclick="resetCounts()">清空本機計數</button>
             </div>
 
             <div class="grid-box">
@@ -119,7 +136,7 @@ app.get('/', (req, res) => {
                     <button type="button" class="btn-secondary" style="padding: 2px 8px; font-size: 11px;" onclick="fetchCurrentIp()">重新整理</button>
                 </div>
                 <div class="total-count-box">
-                    <span>🚀 累積成功送出:</span>
+                    <span>🚀 本瀏覽器 fetch 未拋錯:</span>
                     <span id="total-sent-count">0</span> 次
                 </div>
                 <label>
@@ -144,6 +161,22 @@ app.get('/', (req, res) => {
             
             <h3 style="font-size: 14px; margin: 15px 0 8px 0; color: #cbd5e1;">即時執行日誌 (包含傳送參數)：</h3>
             <div id="log-box">等待開始執行...</div>
+
+            <h3 style="font-size: 14px; margin: 18px 0 8px 0; color: #cbd5e1;">伺服器累積送出紀錄（可跨瀏覽器核對）</h3>
+            <div class="actions">
+                <button type="button" class="btn-secondary" onclick="refreshServerReport()">重新整理總表</button>
+                <a href="/api/report.csv" style="color: #7dd3fc; align-self: center;">下載 CSV 總表</a>
+                <span id="report-summary" style="color: #94a3b8; font-size: 13px;"></span>
+            </div>
+            <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                    <thead><tr style="color: #7dd3fc; border-bottom: 1px solid #475569;">
+                        <th style="padding: 8px;">目標</th><th style="padding: 8px;">記錄次數</th>
+                        <th style="padding: 8px;">fetch 未拋錯</th><th style="padding: 8px;">fetch 錯誤</th>
+                    </tr></thead>
+                    <tbody id="server-report-body"><tr><td colspan="4" style="padding: 8px; color: #94a3b8;">讀取中…</td></tr></tbody>
+                </table>
+            </div>
         </div>
 
         <script>
@@ -175,6 +208,7 @@ app.get('/', (req, res) => {
             // 頁面載入時還原 IP 與歷史計數 UI
             window.addEventListener('DOMContentLoaded', function() {
                 fetchCurrentIp();
+                refreshServerReport();
                 
                 document.getElementById('total-sent-count').innerText = totalSentCount;
                 Object.keys(itemSentCounts).forEach(function(index) {
@@ -207,6 +241,72 @@ app.get('/', (req, res) => {
                     itemBadge.innerText = itemSentCounts[targetIndex] + ' 次';
                 }
                 localStorage.setItem('ga_item_sent_counts', JSON.stringify(itemSentCounts));
+            }
+
+            async function recordAttempt(targetIndex, item, status, errorMessage) {
+                try {
+                    var response = await fetch('/api/record', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            targetIndex: targetIndex,
+                            name: item.name,
+                            status: status,
+                            error: errorMessage || '',
+                            params: {
+                                tid: item.params.tid, cid: item.params.cid, sid: item.params.sid,
+                                _fv: item.params._fv, cs: item.params.cs, cm: item.params.cm,
+                                cn: item.params.cn, dl: item.params.dl, dt: item.params.dt, en: item.params.en
+                            }
+                        })
+                    });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    await refreshServerReport();
+                    return true;
+                } catch (error) {
+                    logBoxForAuditWarning(error);
+                    return false;
+                }
+            }
+
+            function logBoxForAuditWarning(error) {
+                var box = document.getElementById('log-box');
+                box.innerHTML += '<span class="log-warn">[紀錄提醒] 本次傳送紀錄未能寫入伺服器：' +
+                    String(error.message || error).replace(/[&<>"]/g, function(ch) {
+                        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch];
+                    }) + '</span><br>';
+                box.scrollTop = box.scrollHeight;
+            }
+
+            async function refreshServerReport() {
+                var body = document.getElementById('server-report-body');
+                try {
+                    var response = await fetch('/api/report');
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    var report = await response.json();
+                    document.getElementById('report-summary').innerText =
+                        '總記錄 ' + report.total + ' 次（fetch 未拋錯 ' + report.fetched +
+                        '、fetch 錯誤 ' + report.errors + '；不代表 GA4 已確認接收）';
+                    body.innerHTML = '';
+                    if (!report.items.length) {
+                        body.innerHTML = '<tr><td colspan="4" style="padding: 8px; color: #94a3b8;">尚無伺服器紀錄</td></tr>';
+                        return;
+                    }
+                    report.items.forEach(function(item) {
+                        var row = document.createElement('tr');
+                        row.style.borderBottom = '1px solid #334155';
+                        [item.name, item.total + ' 次', item.fetched + ' 次', item.errors + ' 次'].forEach(function(value) {
+                            var cell = document.createElement('td');
+                            cell.style.padding = '8px';
+                            cell.textContent = value;
+                            row.appendChild(cell);
+                        });
+                        body.appendChild(row);
+                    });
+                } catch (error) {
+                    body.innerHTML = '<tr><td colspan="4" style="padding: 8px; color: #f87171;">無法載入總表：' +
+                        String(error.message || error) + '</td></tr>';
+                }
             }
 
             function resetCounts() {
@@ -341,6 +441,7 @@ app.get('/', (req, res) => {
                                 await fetch(targetUrl, { mode: 'no-cors' });
 
                                 incrementCount(selectedIndexes[i]);
+                                recordAttempt(selectedIndexes[i], item, 'fetch_resolved', '');
 
                                 var paramLogHtml = '<div style="color: #64748b; font-size: 11px; padding-left: 20px; margin-bottom: 6px;">' +
                                   '↳ <b>[發送來源 IP]</b> ' + currentIpAddress + '<br>' +
@@ -351,8 +452,9 @@ app.get('/', (req, res) => {
                                   '<span style="padding-left: 80px;"><b>dl:</b> ' + item.params.dl + '</span>' +
                                 '</div>';
 
-                                logBox.innerHTML += '<span style="color: #34d399;">[成功] (' + (i + 1) + '/' + data.items.length + ') ' + item.name + ' 已送達</span><br>' + paramLogHtml;
+                                logBox.innerHTML += '<span style="color: #34d399;">[fetch未拋錯] (' + (i + 1) + '/' + data.items.length + ') ' + item.name + '；GA4是否接收需以 GA4 報表確認</span><br>' + paramLogHtml;
                             } catch (sendErr) {
+                                recordAttempt(selectedIndexes[i], item, 'fetch_error', sendErr.message);
                                 logBox.innerHTML += '<span style="color: #f87171;">[失敗] (' + (i + 1) + '/' + data.items.length + ') ' + item.name + ' 失敗: ' + sendErr.message + '</span><br>';
                             }
 
@@ -380,6 +482,88 @@ app.get('/', (req, res) => {
     </body>
     </html>
   `);
+});
+
+app.post('/api/record', (req, res) => {
+  try {
+    const body = req.body || {};
+    if (!['fetch_resolved', 'fetch_error'].includes(body.status) || typeof body.name !== 'string') {
+      return res.status(400).json({ success: false, message: '無效的送出紀錄。' });
+    }
+    const record = {
+      timestamp: new Date().toISOString(),
+      targetIndex: Number.isInteger(body.targetIndex) ? body.targetIndex : null,
+      name: body.name.slice(0, 200),
+      status: body.status,
+      error: typeof body.error === 'string' ? body.error.slice(0, 500) : '',
+      params: body.params && typeof body.params === 'object' ? {
+        tid: body.params.tid, cid: body.params.cid, sid: body.params.sid,
+        _fv: body.params._fv, cs: body.params.cs, cm: body.params.cm,
+        cn: body.params.cn, dl: body.params.dl, dt: body.params.dt, en: body.params.en
+      } : {}
+    };
+    fs.appendFileSync(SEND_LOG_FILE, JSON.stringify(record) + '\n', 'utf8');
+    res.json({ success: true });
+  } catch (error) {
+    console.error('無法保存 GA4 送出紀錄：', error);
+    res.status(500).json({ success: false, message: '無法保存送出紀錄。' });
+  }
+});
+
+app.get('/api/report', (req, res) => {
+  try {
+    const logs = readSendLogs();
+    const grouped = new Map();
+    for (const record of logs) {
+      const key = String(record.targetIndex == null ? record.name : record.targetIndex);
+      if (!grouped.has(key)) grouped.set(key, {
+        targetIndex: record.targetIndex, name: record.name, total: 0, fetched: 0, errors: 0
+      });
+      const item = grouped.get(key);
+      item.total++;
+      if (record.status === 'fetch_resolved') item.fetched++;
+      if (record.status === 'fetch_error') item.errors++;
+    }
+    const items = Array.from(grouped.values()).sort((a, b) =>
+      (a.targetIndex == null ? Number.MAX_SAFE_INTEGER : a.targetIndex) -
+      (b.targetIndex == null ? Number.MAX_SAFE_INTEGER : b.targetIndex));
+    res.json({
+      total: logs.length,
+      fetched: logs.filter(record => record.status === 'fetch_resolved').length,
+      errors: logs.filter(record => record.status === 'fetch_error').length,
+      items,
+      recent: logs.slice(-100).reverse()
+    });
+  } catch (error) {
+    console.error('無法讀取 GA4 送出紀錄：', error);
+    res.status(500).json({ success: false, message: '無法讀取送出紀錄。' });
+  }
+});
+
+app.get('/api/report.csv', (req, res) => {
+  try {
+    const logs = readSendLogs();
+    const columns = ['timestamp', 'targetIndex', 'name', 'status', 'error', 'tid', 'cid', 'sid', '_fv', 'cs', 'cm', 'cn', 'dl', 'dt', 'en'];
+    const quote = value => {
+      let text = value == null ? '' : String(value);
+      if (/^[=+\-@]/.test(text)) text = "'" + text;
+      return '"' + text.replace(/"/g, '""') + '"';
+    };
+    const rows = [columns.join(',')].concat(logs.map(record => [
+      record.timestamp, record.targetIndex, record.name, record.status, record.error,
+      record.params && record.params.tid, record.params && record.params.cid,
+      record.params && record.params.sid, record.params && record.params._fv,
+      record.params && record.params.cs, record.params && record.params.cm,
+      record.params && record.params.cn, record.params && record.params.dl,
+      record.params && record.params.dt, record.params && record.params.en
+    ].map(quote).join(',')));
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="ga4-send-report.csv"');
+    res.send('\uFEFF' + rows.join('\r\n'));
+  } catch (error) {
+    console.error('無法匯出 GA4 送出紀錄：', error);
+    res.status(500).send('無法匯出送出紀錄。');
+  }
 });
 
 app.post('/run-task', (req, res) => {
